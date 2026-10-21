@@ -1,0 +1,31 @@
+{
+  "schema": "column.s1g.archived235-verification.v1",
+  "source_kind": "HISTORICAL_ARCHIVE_EXACT_SHA_OFFLINE",
+  "recorded_source_sha256": "ef700c438ec910f88ee6e05984671bdd5f5da3dc81d57d641896f92ccbe00664",
+  "cutset_source_sha256": "471bbdb030aeda4c3dfaa815d5b6f5c9b3bda4da6f11ae658a1a999aef6442e9",
+  "stability_source_sha256": "1b81058eacefd50de5e79ca173a0acf2b160f00506eda1a11aee467c9acbd697",
+  "recorded_model_sha256": "165ce9b0763fe3e13690be5f1827643726fe706eb9dc13462e87b8e3aad684b8",
+  "cutset_historical_model_sha256": "fc09e5eeb1e195c7141eb992ec501e0004ea733078997c58e1f84d979f70758f",
+  "cutset_candidate_model_sha256": "61fa288fe6aa098b16062b0baae3fb882937ab68280c93971475aa39b2246621",
+  "observed_raw_frameforce_rows": 60,
+  "observed_signed_single_value_rows": 12,
+  "observed_max_min_rows": 48,
+  "observed_case_step_populations": 20,
+  "stations_mm": [
+    0,
+    2225,
+    4450
+  ],
+  "grav_ult_first_raw_m3_knm": -28.627450838775502,
+  "separate_design_m3_knm": -171.5232,
+  "historical_connectivity_length_mm": 5150,
+  "historical_unqualified_free_length_claim_mm": 4450,
+  "story_operand_difference_kn": 82463.2776,
+  "story_operand_difference_fraction": 0.4246809833230709,
+  "current_result_epoch_proven": false,
+  "recorded_model_to_candidate_authority_rebound": false,
+  "current_a17_to_a20_materializations_proven": false,
+  "global_sway_proven": false,
+  "modal_m6b": "OPEN",
+  "engineering_design_release_qualified": false
+}
