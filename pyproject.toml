@@ -1,0 +1,8 @@
+[project]
+name = "tbdy-column-clean-start"
+version = "0.0.1"
+description = "Offline source-bound TS500 stability proof-of-concept; NOT a full column designer"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+include = ["tbdy_column_core*"]
