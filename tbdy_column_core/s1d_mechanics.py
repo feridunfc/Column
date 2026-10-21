@@ -137,11 +137,37 @@ def preview_ts500_static_mechanics(
         return _block(snapshot, S1DStatus.MAGNIFICATION_BASIS_BLOCKED,
                       "UNNEEDED_SECOND_ORDER_FACTORS_RISK_DOUBLE_MAGNIFICATION")
 
-    numeric_states = []
+    # TS 500 Eq.7.26: the M2 input TO the beta operation cannot be
+    # below the Eq.6.16 minimum eccentricity moment. Do the end-moment floor
+    # BEFORE applying the second-order factor, not afterward.
+    raw_states = tuple(_to_math_state(snapshot, d) for d in snapshot.demands)
+    end_states = tuple(s for s in raw_states if s.end_tag in ("I_END", "J_END"))
+    internal = tuple(s for s in raw_states if s.end_tag not in ("I_END", "J_END"))
+    min_e = apply_ts500_minimum_eccentricity(
+        component_id=snapshot.column_id, width_mm=snapshot.width_mm,
+        depth_mm=snapshot.depth_mm, demands=end_states,
+    )
+    if not min_e.resolved:
+        return _block(snapshot, S1DStatus.MECHANICS_BASIS_BLOCKED,
+                      "MINIMUM_ECCENTRICITY_EVALUATION_UNRESOLVED")
+
+    # End-zero-moment sign branches all retain exact original-state identity
+    # through a controlled map; the same qualified M2/M3 factor applies
+    # separately to each generated branch, without mixing cases or stations.
+    original_ids = {
+        descendant_id: adjustment.source_state_id
+        for adjustment in min_e.adjustments
+        for descendant_id in adjustment.generated_state_ids
+    }
+    original_ids.update({x.state_id: x.state_id for x in internal})
+    originals = {d.state_id: d for d in snapshot.demands}
+    corrected_inputs = tuple(sorted((*min_e.states, *internal),
+                                    key=lambda d: d.state_id))
+    numeric_states: list[ColumnDemandState] = []
     count = 0
-    for d in snapshot.demands:
-        raw = _to_math_state(snapshot, d)
-        p = pairs.get(d.state_id)
+    for preliminary in corrected_inputs:
+        original = originals[original_ids[preliminary.state_id]]
+        p = pairs.get(original.state_id)
         results = {"M2": None, "M3": None}
         if needed:
             assert p is not None
@@ -154,8 +180,9 @@ def preview_ts500_static_mechanics(
                     continue
                 slender = axis_results[axis]
                 if basis is None or (basis.axis != axis
-                                    or basis.demand_state_id != d.state_id
-                                    or not isclose(basis.nd_compression_n, d.nd_compression_n,
+                                    or basis.demand_state_id != original.state_id
+                                    or not isclose(basis.nd_compression_n,
+                                                   original.nd_compression_n,
                                                    rel_tol=1e-10, abs_tol=0.01)
                                     or not isclose(basis.effective_length_lk_mm,
                                                    slender.effective_length_lk_mm,
@@ -170,31 +197,21 @@ def preview_ts500_static_mechanics(
                 if not result.applied:
                     return _block(snapshot, S1DStatus.GENERAL_ANALYSIS_REQUIRED,
                                   "TS500_MAGNIFICATION_DENOMINATOR_OR_STORY_LIMIT_BLOCKED")
-                results[axis] = result
+                # Rebind only the result identity to each ±emin branch.
+                # The mathematical factor still belongs to the qualified
+                # original signed concurrent N-M2-M3 state.
+                results[axis] = replace(result, demand_state_id=preliminary.state_id)
                 count += 1
-            raw = magnify_concurrent_column_demand_state(
-                raw, m2=results["M2"], m3=results["M3"]
+            preliminary = magnify_concurrent_column_demand_state(
+                preliminary, m2=results["M2"], m3=results["M3"]
             )
-        numeric_states.append(raw)
+        numeric_states.append(preliminary)
 
-    # Minimum eccentricity belongs to PHYSICALLY QUALIFIED column END
-    # states only. Interior stations are preserved without a fake 'end' rule.
-    end_states = tuple(s for s in numeric_states
-                       if s.end_tag in ("I_END", "J_END"))
-    internal = tuple(s for s in numeric_states
-                     if s.end_tag not in ("I_END", "J_END"))
-    min_e = apply_ts500_minimum_eccentricity(
-        component_id=snapshot.column_id, width_mm=snapshot.width_mm,
-        depth_mm=snapshot.depth_mm, demands=end_states,
-    )
-    if not min_e.resolved:
-        return _block(snapshot, S1DStatus.MECHANICS_BASIS_BLOCKED,
-                      "MINIMUM_ECCENTRICITY_EVALUATION_UNRESOLVED")
-    final_states = tuple(sorted((*min_e.states, *internal), key=lambda s: s.state_id))
+    final_states = tuple(numeric_states)
     return S1DPreview(
         column_id=snapshot.column_id,
         status=S1DStatus.NUMERIC_MECHANICS_PREVIEW_NOT_FINAL,
-        reason="ENGINEERING_SOURCE_AND_EQUATION_ORDERING_NEEDS_INDEPENDENT_ACCEPTANCE",
+        reason="TS500_6_16_FLOOR_BEFORE_7_26_MAGNIFICATION_NUMERIC_ONLY_SOURCE_UNPROVEN",
         input_state_count=len(snapshot.demands),
         output_state_count=len(final_states),
         adjusted_end_state_count=min_e.adjusted_source_state_count,

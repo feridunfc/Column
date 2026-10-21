@@ -124,7 +124,7 @@ class RetainedPhysicsCalculations(unittest.TestCase):
         r = evaluate_ts500_axis_moment_magnification(basis)
         expected_ei = (0.4 * 34_000 * I_MOMENT) / 1.25
         expected_nk = pi**2 * expected_ei / 5000**2
-        expected_beta = 1.0 / (1.0 - 500_000 / (1.3 * expected_nk))
+        expected_beta = 1.0 / (1.0 - 1.3 * 500_000 / expected_nk)
         self.assertAlmostEqual(r.effective_ei_nmm2, expected_ei, delta=1)
         self.assertAlmostEqual(r.critical_load_nk_n, expected_nk, delta=1)
         self.assertAlmostEqual(r.final_magnification_factor, expected_beta, places=10)

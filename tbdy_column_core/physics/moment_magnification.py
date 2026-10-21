@@ -214,6 +214,8 @@ def evaluate_ts500_axis_moment_magnification(
             source_refs=refs,
         )
 
+    # TS 500 7.24 & 7.27: 1.3 MULTIPLIES Nd/Nk, it does not multiply Nk.
+    # Verified against Turkish TS500 text and Girgin/Ozmen/Darilmaz reference.
     if basis.sway_classification == SWAY_PREVENTED:
         if basis.horizontal_load_between_ends:
             cm = 1.0
@@ -225,7 +227,7 @@ def evaluate_ts500_axis_moment_magnification(
                 + 0.4
                 * basis.m1_over_m2,
             )
-        denominator = 1.0 - basis.nd_compression_n / (1.3 * nk)
+        denominator = 1.0 - 1.3 * basis.nd_compression_n / nk
         if denominator <= 0.0:
             return ColumnMomentMagnificationAxisResult(
                 demand_state_id=basis.demand_state_id,
@@ -282,8 +284,8 @@ def evaluate_ts500_axis_moment_magnification(
             source_refs=refs,
         )
 
-    individual_denominator = 1.0 - basis.nd_compression_n / (1.3 * nk)
-    story_denominator = 1.0 - basis.story_sum_nd_n / (1.3 * basis.story_sum_nk_n)
+    individual_denominator = 1.0 - 1.3 * basis.nd_compression_n / nk
+    story_denominator = 1.0 - 1.3 * basis.story_sum_nd_n / basis.story_sum_nk_n
     if individual_denominator <= 0.0 or story_denominator <= 0.0:
         return ColumnMomentMagnificationAxisResult(
             demand_state_id=basis.demand_state_id,
