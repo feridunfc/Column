@@ -79,6 +79,53 @@ class TS500IndependentNumericalOracles(unittest.TestCase):
         self.assertAlmostEqual(r.beta_story, 2.184662509572257, places=9)
         self.assertAlmostEqual(r.critical_load_nk_n, target_nk, delta=.001)
 
+    def test_eq725_cm_half_positive_end_ratio_independent_value(self):
+        source = basic()
+        nk = evaluate_ts500_axis_moment_magnification(source).critical_load_nk_n
+        result = evaluate_ts500_axis_moment_magnification(replace(
+            source, horizontal_load_between_ends=False,
+            m1_over_m2=0.5, nd_compression_n=0.2 * nk,
+        ))
+        # TS500 7.25 Cm=0.6+0.4*(+0.5)=0.8.
+        # TS500 7.24 denominator=1-1.3*0.2=0.74.
+        self.assertAlmostEqual(result.cm, 0.8, places=12)
+        self.assertAlmostEqual(result.beta_individual, 40.0/37.0, places=12)
+
+    def test_eq725_double_curvature_cm_floor_and_horizontal_override(self):
+        source=basic()
+        low=evaluate_ts500_axis_moment_magnification(replace(
+            source, horizontal_load_between_ends=False,
+            m1_over_m2=-0.9,
+        ))
+        self.assertAlmostEqual(low.cm, 0.4, places=12)
+        sideways=evaluate_ts500_axis_moment_magnification(replace(
+            source, horizontal_load_between_ends=True,
+            m1_over_m2=None,
+        ))
+        self.assertAlmostEqual(sideways.cm, 1.0, places=12)
+
+    def test_eq729_uses_fck_not_fcd_in_sway_slenderness_threshold(self):
+        source=basic()
+        # Explicit check in the band where fck vs fcd changes the decision.
+        # slenderness=10200/120=85; fck threshold=35/sqrt(800k/5.6MN)
+        # ~=92.60, while substituting fcd=35/1.5 gives ~75.60.
+        # TS500's Eq 7.29 explicitly writes fck.
+        modified=replace(
+            source, sway_classification=SWAY_PERMITTED,
+            nd_compression_n=800_000,
+            effective_length_lk_mm=10200, radius_i_mm=120,
+            story_sum_nd_n=800_000, story_sum_nk_n=10_000_000,
+            fck_mpa=35, concrete_area_mm2=160_000,
+        )
+        result=evaluate_ts500_axis_moment_magnification(modified)
+        self.assertAlmostEqual(result.cm, 1.0, places=12)
+        self.assertAlmostEqual(result.slenderness_lk_over_i, 85.0)
+        self.assertFalse(result.eq729_product_required)
+        self.assertAlmostEqual(
+            result.final_magnification_factor,
+            max(result.beta_individual, result.beta_story),
+        )
+
     def test_minimum_eccentricity_precedes_second_order_for_end_branch(self):
         s=snap(m2=0,m3=0)
         b=magnification_bases(s)
