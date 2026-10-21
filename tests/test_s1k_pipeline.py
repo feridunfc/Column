@@ -78,8 +78,10 @@ class S1KFullChainSyntheticTests(unittest.TestCase):
     def test_long_column_axis_specific_magnification_remains_synthetic(self):
         snap, axes = fixture(length=6000.0)
         r = run_s1_numeric_preview(snap, axis_facts=axes)
-        self.assertEqual(r.status, S1PipelineStatus.NUMERIC_CANDIDATE_PREVIEW_NOT_DESIGN_PASS)
+        self.assertEqual(r.status, S1PipelineStatus.MEMBER_SECOND_ORDER_ENVELOPE_UNQUALIFIED)
         self.assertEqual(r.case_count, 1)
+        self.assertIsNone(r.selected_candidate_id)
+        self.assertEqual(r.numeric_demand_count, 0)
         self.assertFalse(r.final_design_demand_proven)
 
     def test_recorded_etabs_source_cannot_be_promoted_using_synthetic_axes(self):

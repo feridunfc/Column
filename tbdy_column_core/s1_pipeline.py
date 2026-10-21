@@ -34,6 +34,7 @@ class S1PipelineStatus(StrEnum):
     BASIS_BLOCKED = "BASIS_BLOCKED"
     MECHANICS_BLOCKED = "MECHANICS_BLOCKED"
     DERIVED_POPULATION_BLOCKED = "DERIVED_POPULATION_BLOCKED"
+    MEMBER_SECOND_ORDER_ENVELOPE_UNQUALIFIED = "MEMBER_SECOND_ORDER_ENVELOPE_UNQUALIFIED"
     NO_LAYOUT_PREVIEW = "NO_LAYOUT_PREVIEW"
     NO_NUMERIC_PMM_CANDIDATE_PREVIEW = "NO_NUMERIC_PMM_CANDIDATE_PREVIEW"
     NUMERIC_CANDIDATE_PREVIEW_NOT_DESIGN_PASS = (
@@ -152,6 +153,18 @@ def run_s1_numeric_preview(
                 preview.output_state_count != len(preview.derived_states)):
             return _blocked(snapshot, S1PipelineStatus.MECHANICS_BLOCKED,
                             f"{case}:{preview.reason}")
+        if preview.axis_magnification_count > 0:
+            # TS500 Eq 7.26 requires beta * the MEMBER's M2 (larger
+            # end-moment magnitude, with Eq 6.16 floor), not an
+            # independent beta * M(station) at every observed station.
+            # S1-D provides provisional per-state factors, not a
+            # source-qualified member design envelope. Fail closed
+            # before a rebar candidate can be returned.
+            return _blocked(
+                snapshot,
+                S1PipelineStatus.MEMBER_SECOND_ORDER_ENVELOPE_UNQUALIFIED,
+                f"{case}:TS500_EQ_7_26_MEMBER_M2_ENVELOPE_NOT_IMPLEMENTED",
+            )
         derived.extend(preview.derived_states)
 
     # Station uniqueness belongs to the RAW population. One physical station
