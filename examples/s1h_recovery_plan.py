@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse
 from pathlib import Path
-from tbdy_column_core.s1h_recovery import plan_from_archive_zip
+from tools.legacy_audit.s1h_recovery import plan_from_archive_zip
 
 def main() -> None:
     parser=argparse.ArgumentParser(

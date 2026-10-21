@@ -1,7 +1,7 @@
 """Read-only, exact-hash S1-G archive audit: never opens ETABS."""
 from __future__ import annotations
 import argparse
-from tbdy_column_core.s1g_archive import audit_archive_zip
+from tools.legacy_audit.s1g_archive import audit_archive_zip
 
 def main() -> None:
     parser=argparse.ArgumentParser(

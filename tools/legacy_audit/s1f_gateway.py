@@ -12,13 +12,13 @@ from enum import StrEnum
 from math import isclose, isfinite
 from typing import Any, Sequence
 
-from .s1 import S1ColumnSnapshot
-from .physics.effective_length import (
+from tbdy_column_core.s1 import S1ColumnSnapshot
+from tbdy_column_core.physics.effective_length import (
     ColumnEffectiveLengthAxisBasis,
     column_effective_length_mm, evaluate_ts500_effective_length_factor,
 )
-from .physics.end_moment_ratio import build_exact_static_end_moment_ratio
-from .physics.rebar_selection import ColumnDemandState
+from tbdy_column_core.physics.end_moment_ratio import build_exact_static_end_moment_ratio
+from tbdy_column_core.physics.rebar_selection import ColumnDemandState
 
 
 A18_AUTHORITY = "COLUMN_R1_A18_TS500_END_RESTRAINT_FACTUAL_MATERIALIZATION"

@@ -18,8 +18,8 @@ import unittest
 import warnings
 from zipfile import ZipFile
 
-from tbdy_column_core.s1g_archive import KNOWN_RECORDED_SHA, KNOWN_CUTSET_SHA, KNOWN_STABILITY_SHA
-from tbdy_column_core.s1h_recovery import (
+from tools.legacy_audit.s1g_archive import KNOWN_RECORDED_SHA, KNOWN_CUTSET_SHA, KNOWN_STABILITY_SHA
+from tools.legacy_audit.s1h_recovery import (
     PINNED, REC, CUT, STAB, SOURCE_PRODUCERS, S1HError, Lane,
     derive_recovery_plan, plan_from_archive_zip,
 )
@@ -114,7 +114,7 @@ class S1HBoundariesWithoutExternalArchive(unittest.TestCase):
         self.assertTrue(all(path.endswith(".py") for path in SOURCE_PRODUCERS))
 
     def test_s1h_source_has_no_native_etabs_transport_import(self):
-        source = Path(__file__).resolve().parents[1] / "tbdy_column_core" / "s1h_recovery.py"
+        source = Path(__file__).resolve().parents[1] / "tools" / "legacy_audit" / "s1h_recovery.py"
         tree = ast.parse(source.read_text(encoding="utf-8"))
         imports = set()
         for node in ast.walk(tree):

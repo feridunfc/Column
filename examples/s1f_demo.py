@@ -1,7 +1,7 @@
 """Demonstration of OLD gateway contract (synthetic materialization, no COM)."""
 from json import dumps
 from tests.test_s1f import gateway_provider, products
-from tbdy_column_core.s1f_gateway import reconcile_existing_gateway_replay
+from tools.legacy_audit.s1f_gateway import reconcile_existing_gateway_replay
 
 def main() -> None:
     snapshot, a18, a19, a20 = products()
