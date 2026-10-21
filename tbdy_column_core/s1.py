@@ -1,4 +1,4 @@
-"""S1: preliminary signed-static longitudinal rebar and biaxial PMM assessment.
+"""S1: source- and station-qualified preliminary longitudinal rebar and biaxial PMM assessment.
 
 Reuses the retained pure TBDY mathematics. No ETABS access, no second-order
 qualification, no full-column PASS/FAIL from this isolated step.
@@ -35,6 +35,25 @@ class S1Status(StrEnum):
     NUMERIC_CANDIDATE_FOUND_NOT_FULL_TBDY = "NUMERIC_CANDIDATE_FOUND_NOT_FULL_TBDY"
 
 
+
+@dataclass(frozen=True, slots=True)
+class DemandStationKey:
+    """Exact (case, element, physical station, element station) tuple.
+
+    This is an *expected* census supplied independently of observed rows.
+    """
+    output_case: str
+    element_id: str
+    station_mm: float
+    element_station_mm: float
+
+    def __post_init__(self) -> None:
+        if not self.output_case or not self.element_id:
+            raise ValueError("STATION_KEY_IDENTITY_REQUIRED")
+        if any(not isfinite(x) or x < 0 for x in (self.station_mm, self.element_station_mm)):
+            raise ValueError("STATION_KEY_MUST_BE_FINITE_NONNEGATIVE")
+
+
 @dataclass(frozen=True, slots=True)
 class QualifiedColumnDemand:
     state_id: str
@@ -45,14 +64,40 @@ class QualifiedColumnDemand:
     m2_nmm: float
     m3_nmm: float
     evidence: EvidenceKey
+    station_mm: float | None = None
+    element_id: str | None = None
+    element_station_mm: float | None = None
+    step_type: str | None = None
+    step_number: float | None = None
 
     def __post_init__(self) -> None:
         if not all((self.state_id, self.column_id, self.output_case)):
             raise ValueError("Demand must have nonempty state, column, case identities")
-        if self.end_tag not in ("I_END", "J_END"):
-            raise ValueError("S1 only supports explicit I/J end demands")
+        if self.end_tag not in ("I_END", "J_END", "INTERIOR", "STATION"):
+            raise ValueError("UNSUPPORTED_STATION_LABEL")
         if not all(isfinite(x) for x in (self.nd_compression_n, self.m2_nmm, self.m3_nmm)):
             raise ValueError("Demand forces must be finite")
+        presence = (self.station_mm is not None, self.element_id is not None,
+                    self.element_station_mm is not None)
+        if any(presence) and not all(presence):
+            raise ValueError("INCOMPLETE_PHYSICAL_STATION_IDENTITY")
+        if self.end_tag in ("INTERIOR", "STATION") and not all(presence):
+            raise ValueError("NON_END_DEMAND_REQUIRES_PHYSICAL_STATION")
+        if all(presence):
+            if not self.element_id or any(not isfinite(x) or x < 0 for x in
+                                          (self.station_mm, self.element_station_mm)):
+                raise ValueError("PHYSICAL_STATION_INVALID")
+        if self.step_type not in (None, "Single Value"):
+            raise ValueError("ENVELOPE_OR_NONSTATIC_STEP_NOT_SIMULTANEOUS")
+        if self.step_number is not None and not isfinite(self.step_number):
+            raise ValueError("INVALID_STEP_NUMBER")
+
+    @property
+    def station_key(self) -> DemandStationKey:
+        if self.station_mm is None:
+            raise ValueError("NO_EXPLICIT_STATION_IDENTITY")
+        return DemandStationKey(self.output_case, self.element_id,
+                                self.station_mm, self.element_station_mm)
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,6 +116,7 @@ class S1ColumnSnapshot:
     material: ColumnSectionMaterial
     demands: tuple[QualifiedColumnDemand, ...]
     expected_case_ids: tuple[str, ...]
+    expected_station_keys: tuple[DemandStationKey, ...] | None = None
 
     def __post_init__(self) -> None:
         if not self.column_id:
@@ -83,10 +129,26 @@ class S1ColumnSnapshot:
             raise ValueError("DUPLICATE_DEMAND_STATE")
         if len(set(self.expected_case_ids)) != len(self.expected_case_ids) or not self.expected_case_ids:
             raise ValueError("EXPECTED_CASE_UNIVERSE_INVALID")
-        expected = {(case, end) for case in self.expected_case_ids for end in ("I_END", "J_END")}
-        actual = {(d.output_case, d.end_tag) for d in self.demands}
-        if expected != actual or len(self.demands) != len(expected):
-            raise ValueError("CASE_AND_END_STATION_POPULATION_INCOMPLETE")
+        if self.expected_station_keys is None:
+            # Backward-compatible fixture-only I/J mode, no measured stations.
+            if any(d.station_mm is not None for d in self.demands):
+                raise ValueError("EXPLICIT_STATION_CENSUS_REQUIRED")
+            expected = {(case, end) for case in self.expected_case_ids
+                        for end in ("I_END", "J_END")}
+            actual = {(d.output_case, d.end_tag) for d in self.demands}
+            if expected != actual or len(self.demands) != len(expected):
+                raise ValueError("CASE_AND_END_STATION_POPULATION_INCOMPLETE")
+        else:
+            census = self.expected_station_keys
+            if not census or len(set(census)) != len(census):
+                raise ValueError("INVALID_EXPECTED_STATION_CENSUS")
+            if {k.output_case for k in census} != set(self.expected_case_ids):
+                raise ValueError("CASE_STATION_CENSUS_CONFLICT")
+            if any(d.station_mm is None for d in self.demands):
+                raise ValueError("STATION_POPULATION_INCOMPLETE")
+            observed = tuple(d.station_key for d in self.demands)
+            if len(set(observed)) != len(observed) or set(observed) != set(census):
+                raise ValueError("CASE_AND_STATION_POPULATION_INCOMPLETE_OR_DUPLICATE")
         for d in self.demands:
             if (
                 d.evidence.model_sha256, d.evidence.epoch_id,
@@ -120,6 +182,10 @@ class S1Result:
     governing_utilization: float | None = None
     evaluated_candidate_count: int = 0
     full_tbd_y_qualified: bool = False
+    evaluated_demand_count: int = 0
+    governing_station_mm: float | None = None
+    governing_element_id: str | None = None
+    expected_station_count: int = 0
 
 
 def evaluate_s1_column(snapshot: S1ColumnSnapshot, *, angle_count: int = 72) -> S1Result:
@@ -129,7 +195,14 @@ def evaluate_s1_column(snapshot: S1ColumnSnapshot, *, angle_count: int = 72) -> 
     final demands. An adapter must separately qualify the design basis.
     """
     base = dict(column_id=snapshot.column_id, evidence=snapshot.evidence,
-                source_class=snapshot.source_class)
+                source_class=snapshot.source_class,
+                expected_station_count=len(snapshot.expected_station_keys)
+                if snapshot.expected_station_keys is not None else len(snapshot.demands))
+    # A free-form reviewed flag MUST NOT certify historical/live ETABS force rows.
+    # The future verified final-demand compiler must implement a separate gate.
+    if snapshot.source_class == SourceClass.RECORDED_ETABS:
+        return S1Result(**base, status=S1Status.DEMAND_BASIS_BLOCKED,
+                        reason="RECORDED_ETABS_REQUIRES_QUALIFIED_FINAL_DEMAND_PRODUCER")
     if snapshot.demand_readiness != DemandReadiness.FINAL_DESIGN_REVIEWED or not snapshot.basis_refs:
         return S1Result(
             **base, status=S1Status.DEMAND_BASIS_BLOCKED,
@@ -154,12 +227,15 @@ def evaluate_s1_column(snapshot: S1ColumnSnapshot, *, angle_count: int = 72) -> 
         ColumnDemandState(
             state_id=d.state_id, component_id=snapshot.column_id,
             output_case=d.output_case, case_type="SIGNED_LINEAR_STATIC",
-            step_type=None, step_number=None, station_m=0.0,
+            step_type=d.step_type,
+            step_number=None if d.step_number is None else str(d.step_number),
+            station_m=(d.station_mm / 1000.0 if d.station_mm is not None else 0.0),
             end_tag=d.end_tag, nd_compression_n=d.nd_compression_n,
             m2_nmm=d.m2_nmm, m3_nmm=d.m3_nmm,
             source_identity=(
                 f"{snapshot.evidence.model_sha256}|{snapshot.evidence.epoch_id}|"
-                f"{snapshot.evidence.analysis_generation}|{d.state_id}"
+                f"{snapshot.evidence.analysis_generation}|{d.output_case}|{d.state_id}|"
+                f"{d.element_id}|{d.station_mm}|{d.element_station_mm}"
             ),
         ) for d in snapshot.demands
     )
@@ -182,6 +258,9 @@ def evaluate_s1_column(snapshot: S1ColumnSnapshot, *, angle_count: int = 72) -> 
             **base, status=S1Status.NO_FEASIBLE_CANDIDATE,
             reason=chosen.status, evaluated_candidate_count=len(chosen.trials),
         )
+    governing = next(
+        (d for d in snapshot.demands if d.state_id == chosen.governing_state_id), None
+    )
     return S1Result(
         **base, status=S1Status.NUMERIC_CANDIDATE_FOUND_NOT_FULL_TBDY,
         reason="PMM_CANDIDATE_NUMERIC_ONLY_SEISMIC_SHEAR_CONFINEMENT_JOINT_AND_FULL_DESIGN_PENDING",
@@ -191,4 +270,7 @@ def evaluate_s1_column(snapshot: S1ColumnSnapshot, *, angle_count: int = 72) -> 
         governing_state_id=chosen.governing_state_id,
         governing_utilization=chosen.governing_utilization,
         evaluated_candidate_count=len(chosen.trials),
+        evaluated_demand_count=len(chosen.selected_evaluations),
+        governing_station_mm=governing.station_mm if governing else None,
+        governing_element_id=governing.element_id if governing else None,
     )
