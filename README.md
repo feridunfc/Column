@@ -15,6 +15,7 @@ python -m examples.s1c_demo
 
 ## Implemented
 
+- **S1-E (synthetic source-bound mechanics basis):** original A18/A19/A20 pure kernels produce connected-member alpha, effective length k/Lk, signed I/J end moment ratios and two-axis slenderness/needed EI/Nk bases from typed evidence. Actual old native A17/A18 topology handoff and current 235 source proofs remain BLOCKED. See `S1E_SOURCE_BASIS.md`.
 - **S1-D (provisional static mechanics):** migrated TS 500 minimum-eccentricity/slenderness kernels and **corrected a critical source-code error in moment magnification Eq.7.24/7.27**; signed-static synthetic-only end/interior composition with strict source and axis checks; NO real final N–M2–M3 qualification. See `S1D_MECHANICS_SCOPE.md`.
 - **S1-C (station-preserving PMM path):** strict per-case expected station census (element, station, element station); retains physical intermediate stations and the governing point in passive reports, using the same previous PMM math. Native recorded records remain explicitly BLOCKED unless a true final-design demand compiler is implemented. See `S1C_ACCEPTANCE.md`.
 - **S1-B (bounded read-only ETABS bridge):** use the unchanged original TBDY ColumnForceResultPopulationFact from the verified Windows provider, with explicit unit and force-row conversion, exact case/column/station retention, and no automatic PMM promotion. The tracked historical 235 fixture contains only three genuine Grav_Ult rows from the earlier 60-row archive. See ETABS_ADAPTER_HANDOFF.md.
