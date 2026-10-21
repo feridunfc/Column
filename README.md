@@ -9,10 +9,12 @@ Use **Code → Codespaces → Create codespace on main**. The devcontainer is Py
 ```bash
 python -m unittest discover -s tests -v
 python -m examples.s1_demo
+python -m examples.s1b_recorded_demo
 ```
 
 ## Implemented
 
+- **S1-B (bounded read-only ETABS bridge):** use the unchanged original TBDY ColumnForceResultPopulationFact from the verified Windows provider, with explicit unit and force-row conversion, exact case/column/station retention, and no automatic PMM promotion. The tracked historical 235 fixture contains only three genuine Grav_Ult rows from the earlier 60-row archive. See ETABS_ADAPTER_HANDOFF.md.
 - **S0:** TS 500 Eq. 7.13 non-sway screening for a **complete, qualified, signed linear-static** story state.
 - **S1 — offline numerical seed:** rectangular column perimeter bar geometry; C16–C50 source-supported concrete-strength block factors; strain-compatible 3D N–M2–M3 section capacity; deterministic selection of a longitudinal candidate from a **complete, explicitly reviewed static I/J-end demand universe**; passive JSON/hash reporting.
 - Pure math owners were retained from **feridunfc/TBDY**, frozen blob-identical at historical `main@1440df1` and local `b43b2e2` (package import names adjusted). The independent strip integration oracle also comes from the former repository.
