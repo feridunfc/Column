@@ -1,6 +1,6 @@
 # S1-H — Real Column 235 source recovery and future acquisition plan
 
-**Implementation state:** Prepared on branch \`work/s1h-offline-evidence-recovery-20261021\`. **TESTS DEFERRED** at user request. Do not merge to main / claim PASSED before the separate verification phase.
+**Implementation state:** Prepared on branch \`work/s1h-offline-evidence-recovery-20261021\`. **S1-H dedicated test suite added on the work branch; full original-archive gate requires operator-provided ZIP.** Do not merge to main / claim released until both offline CI and real source validation pass.
 
 ## Goal
 
@@ -56,9 +56,9 @@ python -m examples.s1h_recovery_plan /path/to/TBDY_COLUMN_EXTERNAL_AUDIT_2026-10
 
 The original ZIP is not checked into GitHub; operator supplies it locally. No ZIP extraction or native process execution is performed; nine bounded pinned JSON member reads only.
 
-## Deferred verification gates
+## S1-H verification gates
 
-Before merge or production release, review and execute a bounded acceptance suite including:
+The dedicated `tests/test_s1h_recovery.py` suite now covers 10 always-on contract/negative tests, plus 10 original-archive gates activated only by `COLUMN_S1H_SOURCE_ZIP`. Run the *real* ZIP tests on an authorized operator machine. Verify:
 1. Exact original ZIP produces deterministic 12-item H01–H12 matrix and source digests.
 2. All nine SHA pins verified. One-byte mutation, missing archive member, duplicate ZIP member, wrong EDB candidate all fail closed.
 3. No user declaration / local path / arbitrary \`READY\` label unlocks current final design or present-day B5/B6.
@@ -66,4 +66,17 @@ Before merge or production release, review and execute a bounded acceptance suit
 5. Missing true matching external export never changes candidate generation; absence in this ZIP is not proof none exists anywhere.
 6. No full-product PASS, no new gateway calls and no file mutation. Previous 112 tests must remain green on Python 3.12 and 3.13.
 
-**Disposition:** S1-H implementation only, tests and merge explicitly pending. Do not call this release qualified.
+**Disposition:** S1-H implementation + dedicated test suite on work branch; CI and original-archive acceptance evidence required before merging. No live ETABS or column design release.
+
+
+### PowerShell real-source test command
+
+```powershell
+$env:COLUMN_S1G_SOURCE_ZIP = $zip
+$env:COLUMN_S1H_SOURCE_ZIP = $zip
+python -m unittest discover -s tests -v
+Remove-Item Env:COLUMN_S1G_SOURCE_ZIP
+Remove-Item Env:COLUMN_S1H_SOURCE_ZIP
+```
+
+Do not commit the generated `column235_source_recovery.json` to the work branch; it is an operator output.
