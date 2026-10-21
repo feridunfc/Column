@@ -12,7 +12,7 @@ from types import SimpleNamespace as NS
 import unittest
 
 from tbdy_column_core.physics.end_moment_ratio import build_exact_static_end_moment_ratio
-from tbdy_column_core.s1f_gateway import (
+from tools.legacy_audit.s1f_gateway import (
     A18_AUTHORITY, A19_AUTHORITY, A20_AUTHORITY,
     S1FStatus, reconcile_existing_gateway_replay,
 )

@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 import unittest
 
-from tbdy_column_core.s1g_archive import (
+from tools.legacy_audit.s1g_archive import (
     ArchiveEvidenceError, KNOWN_RECORDED_SHA, KNOWN_CUTSET_SHA,
     KNOWN_STABILITY_SHA, audit_original_235, audit_archive_zip,
 )

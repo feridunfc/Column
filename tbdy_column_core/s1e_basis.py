@@ -237,13 +237,11 @@ def prepare_s1e_basis(
             if (I.source_identity.split("|")[:3] !=
                 J.source_identity.split("|")[:3]):
                 raise ValueError("ENDS_NOT_FROM_SAME_ANALYSIS_GENERATION")
-            if abs(I.nd_compression_n - J.nd_compression_n) > max(
-                1.0, 0.05 * max(abs(I.nd_compression_n),
-                                abs(J.nd_compression_n))
-            ):
-                # N can vary along a member. We need an explicitly qualified
-                # axial design selection rather than arbitrary end averaging.
-                raise ValueError("AXIAL_DEMAND_SELECTION_FROM_I_J_NOT_QUALIFIED")
+            # A constant axial force is NOT a TS500 requirement for end
+            # moment ratios. Gravity loads and distributed member weight
+            # legitimately produce different I/J axial forces. Each station
+            # retains its own Nd in its individual magnification basis below.
+            # This routine does NOT derive a global buckling/stability Nd.
             ratios = tuple(
                 build_exact_static_end_moment_ratio(
                     i_end=I, j_end=J, axis=axis,

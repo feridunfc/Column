@@ -15,6 +15,9 @@ python -m examples.s1c_demo
 
 ## Implemented
 
+- **S1-K (generic synthetic numerical pipeline):** `run_s1_numeric_preview` composes S1-E → S1-D derived sign branches → pure PMM/bar layout *without* treating derived branches as duplicate raw stations. Numerical trial ONLY; no real source authority or full TBDY PASS. S1-E no longer rejects variable I/J axial force via arbitrary ±5% threshold. See `S1K_ENGINEERING_PIPELINE.md`.
+
+
 - **S1-H (work branch, pending original archive acceptance):** source-pinned recovery planner routes 12 exact historical Column 235 evidence items to offline recoverability, project review, conditional existing-gateway acquisition, or downstream TS500/PMM computation. No ETABS live and no false design authority. See `S1H_SOURCE_RECOVERY.md`.
 - **S1-G (actual archived Column 235 evidence):** original three-source SHA-256 audit; 60 observed historical force rows, 20 case/step populations and source-model/stability operand reconciliation, with real design explicitly BLOCKED. Public CI uses a derived ledger; the full actual archival ZIP is optional and user-supplied. See `S1G_ARCHIVED_SOURCE_AUDIT.md`.
 - **S1-F (existing gateway replay consumer):** offline bridge accepts the old `etabs_gateway.replay.FixtureReplayProvider` public contract and old A18/A19/A20 typed materializations. It cross-checks α→k/Lk and signed I/J moment ratios; no ETABS COM and no real design authority. Codespaces CI currently uses a **contract fake** with the old gateway's genuine context fixture; original Python gateway package is *not* installed/executed by CI. See `S1F_GATEWAY_REPLAY.md`.
