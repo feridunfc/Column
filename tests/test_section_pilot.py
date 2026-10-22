@@ -536,6 +536,49 @@ class SectionB1Tests(unittest.TestCase):
         self.assertIn(str(trace["hull_vertex_count"]),section_report_html(result))
         self.assertGreater(data["radial_capacity_nmm"],0.)
 
+
+    def test_b5_public_solver_never_calls_radial_on_outside_origin(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tbdy_column_core.engineering.section_adapter import (
+            SectionKernelAdapter, RootScanAudit
+        )
+        from tbdy_column_core.domain.section_requests import RadialReferenceStatus
+        p=fixture_problem(layout="B",angle_count=8,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        # Synthetic complete *numeric* sample set. All N residuals are zero,
+        # but all M points remain inside the positive quadrant, so their
+        # convex hull cannot contain the moment reference (0,0).
+        points=((10e6,10e6),(30e6,10e6),(10e6,30e6))
+        def solved(adapter,angle,target,policy,material,bars):
+            idx=round(angle.as_deg/45.)%3
+            x,y=points[idx]
+            return SimpleNamespace(
+                neutral_axis_angle_deg=angle.as_deg,
+                neutral_axis_depth_c_mm=200.,
+                n_compression_n=target.as_n,
+                m2_nmm=x,m3_nmm=y
+            )
+        with patch.object(SectionKernelAdapter,"sample_axial_brackets",
+                          return_value=RootScanAudit(359,1,0,1.)), (
+             patch.object(SectionKernelAdapter,"solve_one",solved)), (
+             patch.object(SectionKernelAdapter,"radial",
+                          side_effect=AssertionError("radial must not run"))):
+            result=calculate_section(p)
+        self.assertEqual(result.status,SectionStatus.NUMERIC_UNRESOLVED)
+        self.assertEqual(len(result.states),8)
+        self.assertEqual(result.angular_coverage.missing_indices,())
+        self.assertEqual(result.radial_reference_audit.status,
+                         RadialReferenceStatus.ORIGIN_NOT_STRICT_INTERIOR)
+        self.assertIsNone(result.radial_capacity)
+        self.assertTrue(any("RADIAL_REFERENCE_UNRESOLVED" in issue
+                            for issue in result.issues))
+        data=json.loads(section_report_json(result))
+        self.assertIsNone(data["radial_capacity_nmm"])
+        self.assertEqual(data["radial_reference_audit"]["status"],
+                         "ORIGIN_NOT_STRICT_INTERIOR")
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)
