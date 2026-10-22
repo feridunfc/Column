@@ -1,5 +1,7 @@
 # TBDY Column — Integrated Architecture
 
+> **Historical architecture overview.** The binding current architecture is [Column Constitution v1.3.0](docs/architecture/COLUMN_CONSTITUTION.md). Read [AGENTS.md](AGENTS.md) before starting work. The former two-pass outline and delivery slices below do not override the constitution or its current A/B task.
+
 **Date:** 2026-10-21. **ETABS live HOLD.** This is an architecture and offline calculation seed, not full column design certification.
 
 ## Architectural decision

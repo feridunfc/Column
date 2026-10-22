@@ -1,5 +1,7 @@
 # Supervisor / Worker — Clean Column Core, Sprint S0→S1
 
+> **Historical task — not the active Supervisor instruction.** Start with [AGENTS.md](AGENTS.md), then read the full [current constitution](docs/architecture/COLUMN_CONSTITUTION.md) and [Supervisor task](docs/tasks/COLUMN_SUPERVISOR.md). This historical prompt does not authorize work beyond the current A/B scope.
+
 **Mission:** Complete first recorded-ETABS static column N–M2–M3 / selected rebar / PMM result without creating a competing full engine, another COM transport, or a generic process framework.
 
 ## Sources

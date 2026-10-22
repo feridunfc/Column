@@ -1,5 +1,7 @@
 # Column — TBDY Column Clean Start
 
+> **Active architecture: v1.3.0.** Before any task, read [AGENTS.md](AGENTS.md), the complete [Column Constitution](docs/architecture/COLUMN_CONSTITUTION.md), and the applicable [Worker A/B](docs/tasks/COLUMN_WORKER_AB.md) or [Supervisor](docs/tasks/COLUMN_SUPERVISOR.md) task. Run `python tools/check_architecture_contract.py` before implementation or acceptance. The current new-architecture task is A/B only. The existing implementation inventory and older roadmap below remain historical status, not an alternative task authorization.
+
 Offline-first **TBDY/TS 500 RC column** engineering workbench. The project is deliberately narrow and does **not** yet certify a real ETABS column or a complete building.
 
 ## Open in Codespaces
