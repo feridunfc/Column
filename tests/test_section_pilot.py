@@ -182,6 +182,69 @@ class SectionB1Tests(unittest.TestCase):
         self.assertEqual(r.applied_policy.max_iterations,1)
         self.assertNotEqual(r.status,SectionStatus.COMPLETE_ENVELOPE)
 
+
+    def test_zero_radial_direction_does_not_execute_scan(self):
+        from unittest.mock import patch
+        from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
+        p=fixture_problem(angle_count=8,request=RadialCapacityAtAxialForce(
+            Force.kn(500),Moment.nmm(0),Moment.nmm(0)))
+        with patch.object(SectionKernelAdapter,"sample_axial_brackets",
+                          side_effect=AssertionError("unnecessary scan")):
+            out=calculate_section(p)
+        self.assertEqual(out.status,SectionStatus.UNDEFINED_MOMENT_DIRECTION)
+        self.assertIsNone(out.angle_step)
+        self.assertEqual(out.root_quality,"NOT_APPLICABLE_ZERO_DIRECTION")
+
+    def test_dual_density_scan_carries_true_sampling_evidence(self):
+        p=fixture_problem(angle_count=8,
+            request=EnvelopeAtAxialForce(Force.kn(500)))
+        out=calculate_section(p)
+        self.assertEqual(out.status,SectionStatus.COMPLETE_ENVELOPE,out.issues[:4])
+        self.assertEqual(out.root_quality,
+                         "DUAL_GRID_SINGLE_SAMPLED_BRACKET_NOT_GLOBAL_ROOT_PROOF")
+        for state in out.states:
+            self.assertEqual(state.root_scan_samples,359)
+            self.assertEqual(state.sampled_root_brackets,1)
+            self.assertGreaterEqual(state.root_min_abs_residual.as_n,0)
+        payload=json.loads(section_report_json(out))
+        self.assertEqual(payload["states"][0]["root_scan_samples"],359)
+        self.assertIn("root_min_abs_residual_n",section_report_html(out))
+
+    def test_multiple_and_near_tangent_roots_fail_closed(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace
+        from math import log
+        from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
+        p=fixture_problem(angle_count=8,request=EnvelopeAtAxialForce(Force.n(0)))
+        a=SectionKernelAdapter(p.section,p.frame_model_contract)
+        material=a.prepare_material()
+        bars=a.bars()
+        # Log c across the source scan range. Synthetic root profile is
+        # strictly a test double; it never enters the production math kernel.
+        d=(p.section.profile.b.as_mm**2+p.section.profile.h.as_mm**2)**.5
+        c0=max(d*1e-6,1e-6)
+        c1=d*1e4
+        def multi(_self,angle,c,material,bars):
+            x=log(c/c0)/log(c1/c0)
+            return SimpleNamespace(n_compression_n=(x-.22)*(x-.79)*1e6)
+        with patch.object(SectionKernelAdapter,"evaluate",multi):
+            aud=a.sample_axial_brackets(Angle.deg(0),Force.n(0),material,bars,
+                                       force_atol_n=1.)
+            self.assertGreaterEqual(aud.sign_brackets,2)
+            self.assertFalse(aud.accepted_single_bracket)
+            self.assertEqual(aud.issue_code,"MULTIPLE_SAMPLED_ROOT_BRACKETS")
+        # Exact tangency at one of 359 log samples, with no sign crossing.
+        xhit=179/358
+        def tangent(_self,angle,c,material,bars):
+            x=log(c/c0)/log(c1/c0)
+            return SimpleNamespace(n_compression_n=(x-xhit)**2*1e8)
+        with patch.object(SectionKernelAdapter,"evaluate",tangent):
+            aud=a.sample_axial_brackets(Angle.deg(0),Force.n(0),material,bars,
+                                       force_atol_n=1.)
+            self.assertEqual(aud.sign_brackets,0)
+            self.assertGreater(aud.near_zero_samples,0)
+            self.assertEqual(aud.issue_code,"NEAR_ZERO_WITHOUT_SIGN_BRACKET")
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)

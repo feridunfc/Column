@@ -5,7 +5,7 @@ imports code-dependent rebar-layout candidate-generation functions.
 """
 from __future__ import annotations
 from dataclasses import dataclass
-from math import hypot, isfinite
+from math import hypot, isfinite, log, exp
 from ..domain.section_models import RCSection
 from ..domain.section_requests import FrameModelContract
 from ..domain.quantities import Force, Angle
@@ -21,6 +21,29 @@ from ..physics.section_capacity import (
 
 class UnsupportedSectionMaterial(ValueError):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class RootScanAudit:
+    """Observed numerical evidence only; never a uniqueness certificate."""
+    sample_count: int
+    sign_brackets: int
+    near_zero_samples: int
+    smallest_abs_residual_n: float
+
+    @property
+    def accepted_single_bracket(self) -> bool:
+        return self.sign_brackets == 1
+
+    @property
+    def issue_code(self) -> str:
+        if self.sign_brackets > 1:
+            return "MULTIPLE_SAMPLED_ROOT_BRACKETS"
+        if self.sign_brackets == 0 and self.near_zero_samples:
+            return "NEAR_ZERO_WITHOUT_SIGN_BRACKET"
+        if self.sign_brackets == 0:
+            return "NO_SAMPLED_ROOT_BRACKET"
+        return ""
 
 
 @dataclass(frozen=True,slots=True)
@@ -71,33 +94,40 @@ class SectionKernelAdapter:
         )
 
     def sample_axial_brackets(self, angle: Angle, target: Force,
-                              material, bars, *, force_atol_n: float) -> tuple[int,bool]:
-        """Conservative sampled sign-bracket census, NOT a global root proof.
+                              material, bars, *, force_atol_n: float) -> "RootScanAudit":
+        """Source-bound dual-density logarithmic scan, not a global-root proof.
 
-        The production kernel takes the first crossing. Multiple detected
-        crossings are rejected. A tangential or unresolved crossing remains
-        uncertain; 'sampled=1' is labelled SAMPLED_SINGLE_BRACKET.
+        The fine grid contains the 180 original solver sample abscissae and
+        their geometric midpoints. Reject >1 crossings or an unbracketed
+        near-zero sample instead of taking an arbitrarily selected root.
+        Counts are *sampled* brackets; a hidden tangential root is still
+        possible. Exact source physics is called for every N(c).
         """
-        d=hypot(self.section.profile.b.as_mm,self.section.profile.h.as_mm)
-        c_min=max(d*1e-6,1e-6)
-        c_max=d*1e4
-        ratio=(c_max/c_min)**(1/179)
-        c=c_min
+        if not isfinite(force_atol_n) or force_atol_n <= 0:
+            raise ValueError("force_atol_n must be finite positive")
+        diagonal=hypot(self.section.profile.b.as_mm,self.section.profile.h.as_mm)
+        c_min=max(diagonal*1e-6,1e-6)
+        c_max=diagonal*1e4
+        samples=359
+        log_step=log(c_max/c_min)/(samples-1)
         prev=None
-        changes=0
-        near_zero=False
-        for _ in range(180):
-            st=self.evaluate(angle,c,material,bars)
-            residue=st.n_compression_n-target.as_n
-            if not isfinite(residue):
-                raise ColumnSectionCapacityError("nonfinite axial sample")
-            if abs(residue)<=force_atol_n:
-                near_zero=True
-            if prev is not None and prev*residue<0:
-                changes+=1
-            prev=residue
-            c*=ratio
-        return changes,near_zero
+        sign_changes=0
+        near_zero_samples=0
+        smallest=float("inf")
+        for index in range(samples):
+            # Log interpolation avoids a drift between dense and source grids.
+            c=c_min*exp(log_step*index)
+            sample=self.evaluate(angle,c,material,bars)
+            residual=sample.n_compression_n-target.as_n
+            if not isfinite(residual):
+                raise ColumnSectionCapacityError("nonfinite axial scan residual")
+            smallest=min(smallest,abs(residual))
+            if abs(residual)<=force_atol_n:
+                near_zero_samples+=1
+            if prev is not None and prev*residual<0:
+                sign_changes+=1
+            prev=residual
+        return RootScanAudit(samples,sign_changes,near_zero_samples,smallest)
 
     def solve_one(self, angle: Angle, target: Force, policy,material,bars):
         return solve_capacity_state_for_axial_force(

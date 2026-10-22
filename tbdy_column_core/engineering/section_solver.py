@@ -20,7 +20,7 @@ KERNEL_REF="Column/legacy/column-pre-clean-20261022:physics/section_capacity.py@
 
 class SectionSolver:
     @staticmethod
-    def _state(s, target: Force | None, brackets: int | None):
+    def _state(s, target: Force | None, audit=None):
         return SectionState(
             Angle.deg(s.neutral_axis_angle_deg),
             Length.mm(s.neutral_axis_depth_c_mm),
@@ -28,7 +28,9 @@ class SectionSolver:
             Moment.nmm(s.m2_nmm),
             Moment.nmm(s.m3_nmm),
             None if target is None else Force.n(s.n_compression_n-target.as_n),
-            brackets,
+            None if audit is None else audit.sign_brackets,
+            None if audit is None else audit.sample_count,
+            None if audit is None else Force.n(audit.smallest_abs_residual_n),
         )
 
     def calculate(self, problem: SectionCapacityProblem) -> SectionCapacityResult:
@@ -63,20 +65,35 @@ class SectionSolver:
                     issues.append("DIRECT_STATE_UNRESOLVED:"+str(exc))
             else:
                 target=request.target_compression
+                # Undefined input must not run an expensive fixed-N envelope.
+                # It is an input-direction issue independent of root quality.
+                zero_direction=(
+                    type(request) is RadialCapacityAtAxialForce and
+                    request.direction_m2.as_nmm==0 and
+                    request.direction_m3.as_nmm==0
+                )
+                if zero_direction:
+                    issues.append("UNDEFINED_MOMENT_DIRECTION")
+                    return self._result(
+                        section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
+                        states,issues,cap,boundary2,boundary3,None,
+                        problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION"
+                    )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
-                quality="SAMPLED_SINGLE_BRACKET_NOT_GLOBAL_ROOT_PROOF"
+                quality="DUAL_GRID_SINGLE_SAMPLED_BRACKET_NOT_GLOBAL_ROOT_PROOF"
                 kernel_states=[]
                 for j in range(angle_count):
                     angle=Angle.deg(j*360/angle_count)
                     try:
-                        count,near=adapter.sample_axial_brackets(
+                        audit=adapter.sample_axial_brackets(
                             angle,target,material,bars,
                             force_atol_n=policy.force_balance_tol.as_n
                         )
-                        if count!=1:
-                            issues.append(f"ANGLE_{j}:ROOT_BRACKET_COUNT_{count}"
-                                          +(":NEAR_ZERO_SAMPLE" if near else ""))
+                        if not audit.accepted_single_bracket:
+                            issues.append(f"ANGLE_{j}:"+audit.issue_code+
+                                          f":COUNT_{audit.sign_brackets}"+
+                                          f":MIN_RESIDUAL_N_{audit.smallest_abs_residual_n:.8g}")
                             continue
                         solution=adapter.solve_one(angle,target,policy,material,bars)
                         if solution is None:
@@ -91,7 +108,7 @@ class SectionSolver:
                             (solution.n_compression_n,solution.m2_nmm,solution.m3_nmm)):
                             issues.append(f"ANGLE_{j}:NONFINITE_SOLUTION")
                             continue
-                        states.append(self._state(solution,target,count))
+                        states.append(self._state(solution,target,audit))
                         kernel_states.append(solution)
                     except (ColumnSectionCapacityError,ArithmeticError,ValueError) as exc:
                         issues.append(f"ANGLE_{j}:NUMERIC_UNRESOLVED:{type(exc).__name__}")
@@ -101,22 +118,27 @@ class SectionSolver:
                 elif type(request) is EnvelopeAtAxialForce:
                     status=SectionStatus.COMPLETE_ENVELOPE
                 else:
-                    if request.direction_m2.as_nmm==0 and request.direction_m3.as_nmm==0:
-                        issues.append("UNDEFINED_MOMENT_DIRECTION")
-                        status=SectionStatus.UNDEFINED_MOMENT_DIRECTION
+                    radial=adapter.radial(kernel_states,target,
+                                          request.direction_m2,request.direction_m3,
+                                          step.as_deg)
+                    if radial.status!="PROVEN" or not all(isfinite(v) for v in (
+                        radial.capacity_nmm,radial.boundary_m2_nmm,radial.boundary_m3_nmm)):
+                        issues.append("RADIAL_UNRESOLVED:"+radial.status)
+                        status=SectionStatus.NUMERIC_UNRESOLVED
                     else:
-                        radial=adapter.radial(kernel_states,target,
-                                              request.direction_m2,request.direction_m3,
-                                              step.as_deg)
-                        if radial.status!="PROVEN" or not isfinite(radial.capacity_nmm):
-                            issues.append("RADIAL_UNRESOLVED:"+radial.status)
-                            status=SectionStatus.NUMERIC_UNRESOLVED
-                        else:
-                            cap=Moment.nmm(radial.capacity_nmm)
-                            boundary2=Moment.nmm(radial.boundary_m2_nmm)
-                            boundary3=Moment.nmm(radial.boundary_m3_nmm)
-                            status=SectionStatus.COMPLETE_RADIAL
+                        cap=Moment.nmm(radial.capacity_nmm)
+                        boundary2=Moment.nmm(radial.boundary_m2_nmm)
+                        boundary3=Moment.nmm(radial.boundary_m3_nmm)
+                        status=SectionStatus.COMPLETE_RADIAL
 
+        return self._result(
+            section,request,policy,status,states,issues,cap,boundary2,boundary3,
+            step,problem.input_refs,quality
+        )
+
+    @staticmethod
+    def _result(section,request,policy,status,states,issues,
+                cap,boundary2,boundary3,step,input_refs,quality):
         return SectionCapacityResult(
             section_ref=section.ref,
             request_kind=type(request).__name__,
@@ -127,7 +149,7 @@ class SectionSolver:
             issues=tuple(issues),
             requested_policy=policy,applied_policy=policy,
             angle_step=step,
-            input_refs=problem.input_refs,
+            input_refs=input_refs,
             material_revision=section.material.revision,
             law_ref=f"{section.material.rule.code_id}/{section.material.rule.edition}/{section.material.rule.rule_id}",
             kernel_ref=KERNEL_REF,
