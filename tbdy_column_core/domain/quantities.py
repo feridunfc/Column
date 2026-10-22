@@ -51,7 +51,11 @@ class Quantity:
         return NotImplemented
 
     def __rmul__(self, other: object):
-        return self * other
+        # Do not recursively re-dispatch unrelated Quantity subclasses.
+        # Python 3.13 may try the reflected method again before raising.
+        if type(other) in (int, float):
+            return self * other
+        return NotImplemented
 
     def __truediv__(self, other: object):
         if type(other) in (int, float):
