@@ -380,6 +380,74 @@ class SectionB1Tests(unittest.TestCase):
                     "input_identifier",str(parsed["section_ref"]["id"])):
             self.assertIn(val,html)
 
+
+    def test_b4_local_frame_metadata_and_global_rigid_transform(self):
+        from tbdy_column_core.domain.coordinates import Point3D,LocalFrame
+        from tbdy_column_core.domain.quantities import Length
+        p=fixture_problem(layout="B",request=AtStrainState(
+            Angle.deg(33),Length.mm(240)))
+        regular=calculate_section(p)
+        rotated=LocalFrame(
+            Point3D(Length.mm(1500),Length.mm(-200),Length.mm(800)),
+            (1.,0.,0.),(0.,0.,1.),(0.,-1.,0.)
+        )
+        moved=replace(p,frame_model_contract=replace(
+            p.frame_model_contract,frame=rotated))
+        result=calculate_section(moved)
+        # Given bars/moments are section-local; changing only the global
+        # placement/orientation must not be treated as changing local physics.
+        self.assertEqual(result.states,regular.states)
+        payload=json.loads(section_report_json(result))
+        self.assertEqual(payload["frame_model"]["origin_mm"],[1500.,-200.,800.])
+        self.assertEqual(payload["frame_model"]["e2"],[0.,0.,1.])
+        self.assertEqual(payload["frame_model"]["axial_sign"],"F1_COMPRESSION_POSITIVE")
+        self.assertEqual(payload["frame_model"]["basis_max_residual"],0.)
+        html=section_report_html(result)
+        self.assertIn("origin_mm",html)
+        self.assertIn("F1_COMPRESSION_POSITIVE",html)
+
+    def test_b4_stricter_numeric_axis_policy_fails_closed(self):
+        from math import sqrt
+        from tbdy_column_core.domain.coordinates import Point3D,LocalFrame
+        from tbdy_column_core.application.services import (
+            calculate_section_validated,ValidationStatus,
+        )
+        from tbdy_column_core.domain.quantities import Length
+        p=fixture_problem()
+        frame=LocalFrame(
+            Point3D(Length.mm(0),Length.mm(0),Length.mm(0)),
+            (1.,0.,0.),(1e-6,sqrt(1.-1e-12),0.),(0.,0.,1.),
+            axis_tolerance=1e-4,
+        )
+        problem=replace(p,frame_model_contract=replace(
+            p.frame_model_contract,frame=frame))
+        validated=calculate_section_validated(problem)
+        self.assertEqual(validated.validation.status,ValidationStatus.INVALID_INPUT)
+        self.assertIn("FRAME_EXCEEDS_REQUESTED_AXIS_TOLERANCE",
+                      validated.validation.issues)
+        self.assertIsNone(validated.result)
+        with self.assertRaisesRegex(ValueError,"FRAME_EXCEEDS_REQUESTED_AXIS_TOLERANCE"):
+            calculate_section(problem)
+        # The policy is explicitly supplied; changing only that policy is
+        # visible in the result, and the source frame is still immutable.
+        relaxed=replace(problem,numerical_policy=replace(
+            p.numerical_policy,axis_tol=1e-4))
+        accepted=calculate_section(relaxed)
+        self.assertGreater(accepted.frame_basis_max_residual,1e-10)
+        self.assertLess(accepted.frame_basis_max_residual,relaxed.numerical_policy.axis_tol)
+
+    def test_b4_frame_record_also_retained_for_unresolved_numeric_result(self):
+        p=fixture_problem(angle_count=8,max_iterations=1,
+            request=EnvelopeAtAxialForce(Force.kn(500)))
+        result=calculate_section(p)
+        self.assertIn(result.status,(SectionStatus.PARTIAL_ENVELOPE,
+                                    SectionStatus.NUMERIC_UNRESOLVED))
+        parsed=json.loads(section_report_json(result))
+        self.assertEqual(parsed["frame_model"]["reference"],
+                         "SECTION_GEOMETRIC_CENTROID")
+        self.assertEqual(parsed["frame_model"]["requested_axis_tolerance"],
+                         p.numerical_policy.axis_tol)
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)

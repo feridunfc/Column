@@ -13,6 +13,7 @@ from ..domain.section_requests import (
 )
 from ..engineering.section_adapter import UnsupportedSectionMaterial,SectionKernelAdapter
 from ..engineering.section_solver import SectionSolver
+from ..domain.coordinates import frame_basis_max_residual
 
 
 class ValidationStatus(StrEnum):
@@ -56,6 +57,9 @@ def validate_section_problem(candidate: object)->SectionInputValidation:
     if candidate.frame_model_contract.axial_sign.value!="F1_COMPRESSION_POSITIVE":
         return SectionInputValidation(ValidationStatus.UNSUPPORTED_INPUT,
                                      ("UNSUPPORTED_AXIAL_SIGN_CONVENTION",))
+    if frame_basis_max_residual(candidate.frame_model_contract.frame) > candidate.numerical_policy.axis_tol:
+        return SectionInputValidation(ValidationStatus.INVALID_INPUT,
+                                     ("FRAME_EXCEEDS_REQUESTED_AXIS_TOLERANCE",))
     adapter=SectionKernelAdapter(candidate.section,candidate.frame_model_contract)
     try:
         adapter.prepare_material()

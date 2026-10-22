@@ -154,12 +154,20 @@ class SectionCapacityResult:
     kernel_ref: str
     source_geometry: tuple[tuple[str,float,str],...]
     root_quality: str
+    frame_model_contract: FrameModelContract
+    frame_basis_max_residual: float
     angular_coverage: AngularCoverage | None = None
     full_column_design_pass: bool = False
 
     def __post_init__(self):
         if type(self.status) is not SectionStatus:
             raise TypeError("SectionStatus required")
+        if type(self.frame_model_contract) is not FrameModelContract:
+            raise TypeError("explicit result frame contract required")
+        residual=finite_real(self.frame_basis_max_residual,
+                             field="frame_basis_max_residual")
+        if residual<0 or residual>self.applied_policy.axis_tol:
+            raise ValueError("result frame exceeds applied numeric axis policy")
         if type(self.states) is not tuple or any(type(x) is not SectionState for x in self.states):
             raise TypeError("states must be immutable typed tuple")
         if self.full_column_design_pass:
