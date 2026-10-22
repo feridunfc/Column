@@ -448,6 +448,137 @@ class SectionB1Tests(unittest.TestCase):
         self.assertEqual(parsed["frame_model"]["requested_axis_tolerance"],
                          p.numerical_policy.axis_tol)
 
+
+    def test_b5_legacy_ray_entry_outside_hull_is_not_radial_capacity(self):
+        # Legacy ray helper can return a positive ENTRY intersection even
+        # though (0,0) lies outside a polygon in the positive M2/M3 quadrant.
+        from types import SimpleNamespace
+        from tbdy_column_core.physics.section_capacity import (
+            ColumnInteractionEnvelope,radial_moment_capacity,
+        )
+        from tbdy_column_core.engineering.radial_admissibility import (
+            check_radial_reference,
+        )
+        from tbdy_column_core.domain.section_requests import RadialReferenceStatus
+        p=fixture_problem()
+        states=tuple(SimpleNamespace(m2_nmm=x,m3_nmm=y) for x,y in (
+            (10e6,10e6),(30e6,10e6),(10e6,30e6)))
+        legacy=radial_moment_capacity(
+            ColumnInteractionEnvelope(500000,states,"PROVEN",120.),
+            demand_m2_nmm=40e6,demand_m3_nmm=40e6)
+        self.assertEqual(legacy.status,"PROVEN")
+        self.assertGreater(legacy.capacity_nmm,0.)
+        check=check_radial_reference(states,p.numerical_policy)
+        self.assertEqual(check.audit.status,RadialReferenceStatus.ORIGIN_NOT_STRICT_INTERIOR)
+        self.assertLess(check.audit.minimum_signed_origin_clearance.as_nmm,0.)
+
+    def test_b5_origin_boundary_and_degenerate_hull_fail_closed(self):
+        from types import SimpleNamespace
+        from tbdy_column_core.engineering.radial_admissibility import (
+            check_radial_reference,
+        )
+        from tbdy_column_core.domain.section_requests import RadialReferenceStatus
+        p=fixture_problem()
+        make=lambda pts: tuple(SimpleNamespace(m2_nmm=x,m3_nmm=y) for x,y in pts)
+        on_boundary=check_radial_reference(
+            make(((0,0),(20e6,0),(0,20e6))),p.numerical_policy)
+        self.assertEqual(on_boundary.audit.status,
+                         RadialReferenceStatus.ORIGIN_NOT_STRICT_INTERIOR)
+        self.assertEqual(on_boundary.audit.minimum_signed_origin_clearance.as_nmm,0.)
+        line=check_radial_reference(
+            make(((1e6,0),(2e6,0),(3e6,0))),p.numerical_policy)
+        self.assertEqual(line.audit.status,RadialReferenceStatus.DEGENERATE_SAMPLED_HULL)
+        self.assertIsNone(line.audit.minimum_signed_origin_clearance)
+        inside=check_radial_reference(
+            make(((20e6,0),(0,20e6),(-20e6,0),(0,-20e6))),p.numerical_policy)
+        self.assertEqual(inside.audit.status,RadialReferenceStatus.VALIDATED)
+        self.assertGreater(inside.audit.minimum_signed_origin_clearance.as_nmm,
+                           p.numerical_policy.moment_tol.as_nmm)
+
+    def test_b5_corrupt_radial_kernel_boundary_does_not_pass(self):
+        from unittest.mock import patch
+        from tbdy_column_core.physics.section_capacity import RadialMomentCapacity
+        from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
+        from tbdy_column_core.domain.section_requests import RadialReferenceStatus
+        p=fixture_problem(layout="B",angle_count=8,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        with patch.object(SectionKernelAdapter,"radial",return_value=RadialMomentCapacity(
+            0.,30e6,10e6,20e6,"PROVEN")):
+            r=calculate_section(p)
+        self.assertEqual(r.status,SectionStatus.NUMERIC_UNRESOLVED)
+        self.assertIsNone(r.radial_capacity)
+        self.assertEqual(r.angular_coverage.missing_indices,())
+        self.assertEqual(r.radial_reference_audit.status,
+                         RadialReferenceStatus.KERNEL_BOUNDARY_INCONSISTENT)
+        self.assertTrue(any("RADIAL_BOUNDARY_UNRESOLVED" in x for x in r.issues))
+        with self.assertRaises(ValueError):
+            replace(r,status=SectionStatus.COMPLETE_RADIAL,issues=(),
+                    radial_capacity=Moment.kn_m(1),
+                    radial_boundary_m2=Moment.kn_m(1),
+                    radial_boundary_m3=Moment.kn_m(0))
+
+    def test_b5_real_radial_hull_metadata_consistent_in_both_reports(self):
+        from tbdy_column_core.domain.section_requests import RadialReferenceStatus
+        p=fixture_problem(layout="B",angle_count=72,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        result=calculate_section(p)
+        self.assertEqual(result.status,SectionStatus.COMPLETE_RADIAL,result.issues)
+        self.assertEqual(result.radial_reference_audit.status,
+                         RadialReferenceStatus.VALIDATED)
+        data=json.loads(section_report_json(result))
+        trace=data["radial_reference_audit"]
+        self.assertEqual(trace["status"],"VALIDATED")
+        self.assertGreaterEqual(trace["hull_vertex_count"],3)
+        self.assertGreater(trace["minimum_signed_origin_clearance_nmm"],
+                           trace["required_clearance_nmm"])
+        self.assertIn(str(trace["hull_vertex_count"]),section_report_html(result))
+        self.assertGreater(data["radial_capacity_nmm"],0.)
+
+
+    def test_b5_public_solver_never_calls_radial_on_outside_origin(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tbdy_column_core.engineering.section_adapter import (
+            SectionKernelAdapter, RootScanAudit
+        )
+        from tbdy_column_core.domain.section_requests import RadialReferenceStatus
+        p=fixture_problem(layout="B",angle_count=8,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        # Synthetic complete *numeric* sample set. All N residuals are zero,
+        # but all M points remain inside the positive quadrant, so their
+        # convex hull cannot contain the moment reference (0,0).
+        points=((10e6,10e6),(30e6,10e6),(10e6,30e6))
+        def solved(adapter,angle,target,policy,material,bars):
+            idx=round(angle.as_deg/45.)%3
+            x,y=points[idx]
+            return SimpleNamespace(
+                neutral_axis_angle_deg=angle.as_deg,
+                neutral_axis_depth_c_mm=200.,
+                n_compression_n=target.as_n,
+                m2_nmm=x,m3_nmm=y
+            )
+        with patch.object(SectionKernelAdapter,"sample_axial_brackets",
+                          return_value=RootScanAudit(359,1,0,1.)), (
+             patch.object(SectionKernelAdapter,"solve_one",solved)), (
+             patch.object(SectionKernelAdapter,"radial",
+                          side_effect=AssertionError("radial must not run"))):
+            result=calculate_section(p)
+        self.assertEqual(result.status,SectionStatus.NUMERIC_UNRESOLVED)
+        self.assertEqual(len(result.states),8)
+        self.assertEqual(result.angular_coverage.missing_indices,())
+        self.assertEqual(result.radial_reference_audit.status,
+                         RadialReferenceStatus.ORIGIN_NOT_STRICT_INTERIOR)
+        self.assertIsNone(result.radial_capacity)
+        self.assertTrue(any("RADIAL_REFERENCE_UNRESOLVED" in issue
+                            for issue in result.issues))
+        data=json.loads(section_report_json(result))
+        self.assertIsNone(data["radial_capacity_nmm"])
+        self.assertEqual(data["radial_reference_audit"]["status"],
+                         "ORIGIN_NOT_STRICT_INTERIOR")
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)

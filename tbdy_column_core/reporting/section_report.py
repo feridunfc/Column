@@ -49,6 +49,14 @@ def section_payload(result: SectionCapacityResult)->dict:
             "root_scan_samples":s.root_scan_samples,
             "root_min_abs_residual_n":None if s.root_min_abs_residual is None else s.root_min_abs_residual.as_n,
         } for s in result.states],
+        "radial_reference_audit":None if result.radial_reference_audit is None else {
+            "status":result.radial_reference_audit.status.value,
+            "hull_vertex_count":result.radial_reference_audit.hull_vertex_count,
+            "minimum_signed_origin_clearance_nmm":(
+                None if result.radial_reference_audit.minimum_signed_origin_clearance is None
+                else result.radial_reference_audit.minimum_signed_origin_clearance.as_nmm),
+            "required_clearance_nmm":result.radial_reference_audit.required_clearance.as_nmm,
+        },
         "radial_capacity_nmm":None if result.radial_capacity is None else result.radial_capacity.as_nmm,
         "radial_boundary_m2_nmm":None if result.radial_boundary_m2 is None else result.radial_boundary_m2.as_nmm,
         "radial_boundary_m3_nmm":None if result.radial_boundary_m3 is None else result.radial_boundary_m3.as_nmm,
@@ -129,6 +137,12 @@ def section_report_html(result: SectionCapacityResult)->str:
         for k,v in data[key].items():
             lines.append(f"<dt>{cell(k)}</dt><dd>{cell(v)}</dd>")
         lines.append("</dl>")
+    lines.append("<h2>Sampled radial origin admissibility</h2>")
+    if data["radial_reference_audit"] is None:
+        lines.append("<p>NOT ASSESSED — no complete radial hull</p>")
+    else:
+        for key,value in data["radial_reference_audit"].items():
+            lines.append(f"<p>{cell(key)}: {cell(value)}</p>")
     lines.append("<h2>Radial result</h2>")
     for k in ("radial_capacity_nmm","radial_boundary_m2_nmm","radial_boundary_m3_nmm","angle_step_deg"):
         lines.append(f"<p>{cell(k)}: {cell(data[k])}</p>")
