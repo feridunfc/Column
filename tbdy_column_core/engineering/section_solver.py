@@ -44,8 +44,14 @@ class SectionSolver:
         states=[]
         cap=boundary2=boundary3=None
         step=None
+        resolved_indices=None
         quality="NOT_RUN"
         status=SectionStatus.NUMERIC_UNRESOLVED
+        # calculate_section is deliberately strict: an invalid or unsupported
+        # coordinate reference must not silently yield forces in the wrong frame.
+        from ..domain.coordinates import AxialSignConvention
+        if problem.frame_model_contract.axial_sign!=AxialSignConvention.F1_COMPRESSION_POSITIVE:
+            raise ValueError("UNSUPPORTED_AXIAL_SIGN_CONVENTION")
         adapter=SectionKernelAdapter(section,problem.frame_model_contract)
         try:
             material=adapter.prepare_material()
@@ -136,8 +142,7 @@ class SectionSolver:
 
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
-            step,problem.input_refs,quality,
-            None if type(request) is AtStrainState else resolved_indices
+            step,problem.input_refs,quality,resolved_indices
         )
 
     @staticmethod

@@ -337,6 +337,36 @@ class SectionB1Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             calculate_section({"section":p.section})
 
+    def test_b3_unsupported_material_has_no_angular_coverage(self):
+        from tbdy_column_core.application.services import (
+            calculate_section_validated, ValidationStatus,
+        )
+        p=fixture_problem(layout="B",angle_count=8,
+            request=EnvelopeAtAxialForce(Force.kn(500)))
+        bar=replace(p.section.longitudinal.bars[0],steel_ref="UNKNOWN")
+        layout=replace(p.section.longitudinal,
+            bars=(bar,)+p.section.longitudinal.bars[1:])
+        altered=replace(p,section=replace(p.section,longitudinal=layout))
+        raw=calculate_section(altered)
+        self.assertEqual(raw.status,SectionStatus.UNSUPPORTED_MATERIAL)
+        self.assertIsNone(raw.angular_coverage)
+        validated=calculate_section_validated(altered)
+        self.assertEqual(validated.validation.status,ValidationStatus.UNSUPPORTED_INPUT)
+        self.assertIsNone(validated.result)
+
+    def test_b3_axial_sign_mismatch_rejected_not_assumed(self):
+        from tbdy_column_core.domain.coordinates import AxialSignConvention
+        from tbdy_column_core.application.services import (
+            calculate_section_validated,ValidationStatus,
+        )
+        p=fixture_problem()
+        wrong=replace(p,frame_model_contract=replace(
+            p.frame_model_contract,axial_sign=AxialSignConvention.F1_TENSION_POSITIVE))
+        validated=calculate_section_validated(wrong)
+        self.assertEqual(validated.validation.status,ValidationStatus.UNSUPPORTED_INPUT)
+        with self.assertRaisesRegex(ValueError,"UNSUPPORTED_AXIAL_SIGN_CONVENTION"):
+            calculate_section(wrong)
+
     def test_b3_input_source_revision_propagates_to_both_reports(self):
         p=fixture_problem()
         result=calculate_section(p)
