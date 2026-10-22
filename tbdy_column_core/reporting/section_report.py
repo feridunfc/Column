@@ -36,6 +36,8 @@ def section_payload(result: SectionCapacityResult)->dict:
             "m3_nmm":s.m3.as_nmm,
             "axial_residual_n":None if s.axial_residual is None else s.axial_residual.as_n,
             "sampled_root_brackets":s.sampled_root_brackets,
+            "root_scan_samples":s.root_scan_samples,
+            "root_min_abs_residual_n":None if s.root_min_abs_residual is None else s.root_min_abs_residual.as_n,
         } for s in result.states],
         "radial_capacity_nmm":None if result.radial_capacity is None else result.radial_capacity.as_nmm,
         "radial_boundary_m2_nmm":None if result.radial_boundary_m2 is None else result.radial_boundary_m2.as_nmm,
@@ -81,7 +83,7 @@ def section_report_html(result: SectionCapacityResult)->str:
     for item in data["geometry"]:
         lines.append(f"<tr><th>{cell(item['name'])}</th><td>{cell(item['value'])}</td><td>{cell(item['unit'])}</td></tr>")
     lines.append("</table><h2>Numerical states</h2><table>")
-    cols=("angle_deg","c_mm","n_n","m2_nmm","m3_nmm","axial_residual_n","sampled_root_brackets")
+    cols=("angle_deg","c_mm","n_n","m2_nmm","m3_nmm","axial_residual_n","sampled_root_brackets","root_scan_samples","root_min_abs_residual_n")
     lines.append("<tr>"+"".join(f"<th>{cell(k)}</th>" for k in cols)+"</tr>")
     for item in data["states"]:
         lines.append("<tr>"+"".join(f"<td>{cell(item[k])}</td>" for k in cols)+"</tr>")

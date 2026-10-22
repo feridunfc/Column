@@ -73,6 +73,16 @@ def main():
           f"issues={len(result.issues)}")
     assert all(not x for x in (result.full_column_design_pass,))
     print("B1_OFFLINE_EXAMPLE_OK; NOT A COLUMN-CODE DESIGN APPROVAL")
+    from tbdy_column_core.engineering.convergence import assess_radial_angular_refinement
+    radial_problem=fixture_problem(layout="B",angle_count=8,
+        request=RadialCapacityAtAxialForce(
+            Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+    refinement=assess_radial_angular_refinement(radial_problem)
+    print(f"B2_ANGULAR_REFINEMENT: {refinement.status.value}, "+
+          f"8/16 sampled angles, "+
+          f"delta_nmm={refinement.observed_delta.as_nmm if refinement.observed_delta else 'UNRESOLVED'}, "+
+          f"budget_nmm={refinement.numeric_budget.as_nmm}")
+    print("B2_OBSERVED_NUMERIC_EVIDENCE_ONLY; NOT A CODE PASS")
 
 
 if __name__=="__main__":

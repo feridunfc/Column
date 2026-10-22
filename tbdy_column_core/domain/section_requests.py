@@ -90,6 +90,8 @@ class SectionState:
     m3: Moment
     axial_residual: Force | None
     sampled_root_brackets: int | None
+    root_scan_samples: int | None = None
+    root_min_abs_residual: Force | None = None
     def __post_init__(self):
         for key,kind in (("normal_angle",Angle),("c",Length),("n",Force),
                          ("m2",Moment),("m3",Moment)):
@@ -100,6 +102,13 @@ class SectionState:
         if self.sampled_root_brackets is not None and (
             type(self.sampled_root_brackets) is not int or self.sampled_root_brackets < 0):
             raise ValueError("brackets must be a nonnegative integer")
+        if self.root_scan_samples is not None and (
+            type(self.root_scan_samples) is not int or self.root_scan_samples <= 0):
+            raise ValueError("root_scan_samples must be positive int")
+        if self.root_min_abs_residual is not None and (
+            type(self.root_min_abs_residual) is not Force or
+            self.root_min_abs_residual.as_n < 0):
+            raise ValueError("root_min_abs_residual must be nonnegative Force")
 
 
 @dataclass(frozen=True, slots=True)
