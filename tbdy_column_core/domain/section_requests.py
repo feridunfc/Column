@@ -112,6 +112,30 @@ class SectionState:
 
 
 @dataclass(frozen=True, slots=True)
+class AngularCoverage:
+    """Exact sampled-angle coverage; not a continuous-envelope proof."""
+    attempted_count: int
+    resolved_indices: tuple[int,...]
+    missing_indices: tuple[int,...]
+    def __post_init__(self):
+        if type(self.attempted_count) is not int or self.attempted_count < 8:
+            raise ValueError("attempted_count must be integer >=8")
+        if type(self.resolved_indices) is not tuple or type(self.missing_indices) is not tuple:
+            raise TypeError("immutable tuple indices required")
+        resolved=self.resolved_indices
+        missing=self.missing_indices
+        if any(type(x) is not int for x in (*resolved,*missing)):
+            raise TypeError("angle indices must be integers")
+        if resolved!=tuple(sorted(set(resolved))) or missing!=tuple(sorted(set(missing))):
+            raise ValueError("angle indices must be ordered and unique")
+        if set(resolved)&set(missing) or set(resolved)|set(missing)!=set(range(self.attempted_count)):
+            raise ValueError("resolved/missing must partition all sampled angles")
+    @property
+    def is_complete(self)->bool:
+        return not self.missing_indices
+
+
+@dataclass(frozen=True, slots=True)
 class SectionCapacityResult:
     section_ref: RevisionRef
     request_kind: str
@@ -130,6 +154,7 @@ class SectionCapacityResult:
     kernel_ref: str
     source_geometry: tuple[tuple[str,float,str],...]
     root_quality: str
+    angular_coverage: AngularCoverage | None = None
     full_column_design_pass: bool = False
 
     def __post_init__(self):
@@ -139,6 +164,28 @@ class SectionCapacityResult:
             raise TypeError("states must be immutable typed tuple")
         if self.full_column_design_pass:
             raise ValueError("section pilot cannot claim full-column pass")
+        if self.angular_coverage is not None and type(self.angular_coverage) is not AngularCoverage:
+            raise TypeError("AngularCoverage required")
+        complete=self.status in (
+            SectionStatus.COMPLETE_ENVELOPE,SectionStatus.COMPLETE_RADIAL)
+        if complete and (
+            self.angular_coverage is None or not self.angular_coverage.is_complete
+            or len(self.states)!=self.angular_coverage.attempted_count or self.issues
+        ):
+            raise ValueError("complete numerical result requires complete, issue-free angle coverage")
+        if self.status==SectionStatus.PARTIAL_ENVELOPE and (
+            self.angular_coverage is None or self.angular_coverage.is_complete
+            or not self.states
+        ):
+            raise ValueError("partial envelope requires measured missing angles and retained states")
+        if self.angular_coverage is not None and len(self.states)!=len(self.angular_coverage.resolved_indices):
+            raise ValueError("resolved angular indices must match retained states")
+        if self.status==SectionStatus.NUMERIC_STATE and (
+            len(self.states)!=1 or self.angular_coverage is not None
+        ):
+            raise ValueError("direct strain state must have exactly one state without angular scan")
+        if self.status==SectionStatus.UNDEFINED_MOMENT_DIRECTION and self.angular_coverage is not None:
+            raise ValueError("undefined direction must not run an angular scan")
         if self.radial_capacity is not None and (
             self.status != SectionStatus.COMPLETE_RADIAL or
             type(self.radial_capacity) is not Moment):

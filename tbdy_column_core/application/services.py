@@ -10,3 +10,7 @@ def calculate_section(problem: SectionCapacityProblem)->SectionCapacityResult:
     This is NOT check_column or design_column.
     """
     return SectionSolver().calculate(problem)
+from .validation import (
+    validate_section_problem,calculate_section_validated,
+    ValidationStatus,SectionInputValidation,ValidatedSectionOutcome,
+)
