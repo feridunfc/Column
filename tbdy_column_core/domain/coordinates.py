@@ -120,3 +120,20 @@ def kernel_compression_n(action: ActionVector, convention: AxialSignConvention) 
     if type(convention) is not AxialSignConvention:
         raise TypeError("explicit axial sign mapping required")
     return action.f1 if convention==AxialSignConvention.F1_COMPRESSION_POSITIVE else -action.f1
+
+
+def frame_basis_max_residual(frame: LocalFrame) -> float:
+    """Maximum dimensionless mismatch with a proper orthonormal basis.
+
+    LocalFrame construction checks its own declared tolerance, but a separate
+    NumericalPolicy may require more stringent precision. This helper does
+    not transform or reinterpret a load/action or its reference position.
+    """
+    if type(frame) is not LocalFrame:
+        raise TypeError("LocalFrame required")
+    e1,e2,e3=frame.e1,frame.e2,frame.e3
+    return max(
+        *(abs(dot(e,e)-1.0) for e in (e1,e2,e3)),
+        *(abs(dot(a,b)) for a,b in ((e1,e2),(e1,e3),(e2,e3))),
+        abs(dot(cross(e1,e2),e3)-1.0),
+    )

@@ -26,6 +26,16 @@ def section_payload(result: SectionCapacityResult)->dict:
                        "id":result.section_ref.identifier,
                        "revision":result.section_ref.revision},
         "material_revision":result.material_revision.revision,
+        "frame_model":{
+            "reference":result.frame_model_contract.reference,
+            "axial_sign":result.frame_model_contract.axial_sign.value,
+            "origin_mm":list(result.frame_model_contract.frame.origin.mm),
+            "e1":list(result.frame_model_contract.frame.e1),
+            "e2":list(result.frame_model_contract.frame.e2),
+            "e3":list(result.frame_model_contract.frame.e3),
+            "basis_max_residual":result.frame_basis_max_residual,
+            "requested_axis_tolerance":result.requested_policy.axis_tol,
+        },
         "request":result.request_kind,
         "status":result.status.value,
         "states":[{
@@ -93,6 +103,9 @@ def section_report_html(result: SectionCapacityResult)->str:
     ]
     for k in ("schema","request","status","law_ref","kernel_ref","numeric_root_quality"):
         lines.append(f"<dt>{cell(k)}</dt><dd>{cell(data[k])}</dd>")
+    lines.append("</dl><h2>Local reference frame (declared, not transformed)</h2><dl>")
+    for key,value in data["frame_model"].items():
+        lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
     lines.append("</dl><h2>Input section</h2><table>")
     for item in data["geometry"]:
         lines.append(f"<tr><th>{cell(item['name'])}</th><td>{cell(item['value'])}</td><td>{cell(item['unit'])}</td></tr>")

@@ -12,6 +12,7 @@ from ..domain.section_requests import (
     AngularCoverage,
 )
 from ..domain.quantities import Force, Moment, Length, Angle
+from ..domain.coordinates import frame_basis_max_residual
 from ..domain.tolerances import within
 from ..physics.section_capacity import ColumnSectionCapacityError
 from .section_adapter import SectionKernelAdapter,UnsupportedSectionMaterial
@@ -47,11 +48,16 @@ class SectionSolver:
         resolved_indices=None
         quality="NOT_RUN"
         status=SectionStatus.NUMERIC_UNRESOLVED
-        # calculate_section is deliberately strict: an invalid or unsupported
-        # coordinate reference must not silently yield forces in the wrong frame.
+        # This supplied frame labels local 1/2/3 values, not a request to
+        # reinterpret global actions. In this pilot only already-local
+        # section inputs are supported. Check declared frame precision
+        # against the *requested* policy instead of silently ignoring it.
         from ..domain.coordinates import AxialSignConvention
         if problem.frame_model_contract.axial_sign!=AxialSignConvention.F1_COMPRESSION_POSITIVE:
             raise ValueError("UNSUPPORTED_AXIAL_SIGN_CONVENTION")
+        basis_error=frame_basis_max_residual(problem.frame_model_contract.frame)
+        if basis_error>policy.axis_tol:
+            raise ValueError("FRAME_EXCEEDS_REQUESTED_AXIS_TOLERANCE")
         adapter=SectionKernelAdapter(section,problem.frame_model_contract)
         try:
             material=adapter.prepare_material()
@@ -84,7 +90,8 @@ class SectionSolver:
                     return self._result(
                         section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
                         states,issues,cap,boundary2,boundary3,None,
-                        problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None
+                        problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None,
+                        problem.frame_model_contract,basis_error
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
@@ -142,12 +149,14 @@ class SectionSolver:
 
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
-            step,problem.input_refs,quality,resolved_indices
+            step,problem.input_refs,quality,resolved_indices,
+            problem.frame_model_contract,basis_error
         )
 
     @staticmethod
     def _result(section,request,policy,status,states,issues,
-                cap,boundary2,boundary3,step,input_refs,quality,resolved_indices):
+                cap,boundary2,boundary3,step,input_refs,quality,resolved_indices,
+                frame_contract,basis_error):
         coverage=None
         if resolved_indices is not None:
             count=policy.angle_count
@@ -177,5 +186,7 @@ class SectionSolver:
                 ("As",section.longitudinal.total_area.as_mm2,"mm2"),
             ),
             root_quality=quality,
+            frame_model_contract=frame_contract,
+            frame_basis_max_residual=basis_error,
             angular_coverage=coverage,
         )
