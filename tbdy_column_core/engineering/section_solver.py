@@ -1,0 +1,141 @@
+"""B1: three explicit supplied-rebar section calculations.
+
+No member demand selection, code PASS, shear, second order or PMM utilization
+decision. All generated states are tied to the same physical bar layout.
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+from math import isfinite
+from ..domain.section_requests import (
+    SectionCapacityProblem, SectionCapacityResult, SectionStatus, SectionState,
+    AtStrainState, EnvelopeAtAxialForce, RadialCapacityAtAxialForce,
+)
+from ..domain.quantities import Force, Moment, Length, Angle
+from ..domain.tolerances import within
+from ..physics.section_capacity import ColumnSectionCapacityError
+from .section_adapter import SectionKernelAdapter,UnsupportedSectionMaterial
+
+KERNEL_REF="Column/legacy/column-pre-clean-20261022:physics/section_capacity.py@b2ac0114a5913e3088df6913de7537d7e0792b44"
+
+
+class SectionSolver:
+    @staticmethod
+    def _state(s, target: Force | None, brackets: int | None):
+        return SectionState(
+            Angle.deg(s.neutral_axis_angle_deg),
+            Length.mm(s.neutral_axis_depth_c_mm),
+            Force.n(s.n_compression_n),
+            Moment.nmm(s.m2_nmm),
+            Moment.nmm(s.m3_nmm),
+            None if target is None else Force.n(s.n_compression_n-target.as_n),
+            brackets,
+        )
+
+    def calculate(self, problem: SectionCapacityProblem) -> SectionCapacityResult:
+        if type(problem) is not SectionCapacityProblem:
+            raise TypeError("SectionCapacityProblem required")
+        section=problem.section
+        request=problem.request
+        policy=problem.numerical_policy
+        issues=[]
+        states=[]
+        cap=boundary2=boundary3=None
+        step=None
+        quality="NOT_RUN"
+        status=SectionStatus.NUMERIC_UNRESOLVED
+        adapter=SectionKernelAdapter(section,problem.frame_model_contract)
+        try:
+            material=adapter.prepare_material()
+        except UnsupportedSectionMaterial as exc:
+            issues.append(str(exc))
+            status=SectionStatus.UNSUPPORTED_MATERIAL
+            material=None
+        bars=adapter.bars()
+        if material is not None:
+            if type(request) is AtStrainState:
+                quality="DIRECT_STRAIN_COMPATIBILITY"
+                try:
+                    s=adapter.evaluate(request.neutral_axis_normal,
+                                       request.neutral_axis_depth.as_mm,material,bars)
+                    states.append(self._state(s,None,None))
+                    status=SectionStatus.NUMERIC_STATE
+                except ColumnSectionCapacityError as exc:
+                    issues.append("DIRECT_STATE_UNRESOLVED:"+str(exc))
+            else:
+                target=request.target_compression
+                angle_count=policy.angle_count
+                step=Angle.deg(360/angle_count)
+                quality="SAMPLED_SINGLE_BRACKET_NOT_GLOBAL_ROOT_PROOF"
+                kernel_states=[]
+                for j in range(angle_count):
+                    angle=Angle.deg(j*360/angle_count)
+                    try:
+                        count,near=adapter.sample_axial_brackets(
+                            angle,target,material,bars,
+                            force_atol_n=policy.force_balance_tol.as_n
+                        )
+                        if count!=1:
+                            issues.append(f"ANGLE_{j}:ROOT_BRACKET_COUNT_{count}"
+                                          +(":NEAR_ZERO_SAMPLE" if near else ""))
+                            continue
+                        solution=adapter.solve_one(angle,target,policy,material,bars)
+                        if solution is None:
+                            issues.append(f"ANGLE_{j}:NO_QUALIFIED_NUMERIC_ROOT")
+                            continue
+                        resid=abs(solution.n_compression_n-target.as_n)
+                        if not within(solution.n_compression_n,target.as_n,
+                            policy.force_balance_tol.as_n,policy.relative_tol):
+                            issues.append(f"ANGLE_{j}:AXIAL_RESIDUAL_OVER_POLICY")
+                            continue
+                        if not all(isfinite(x) for x in
+                            (solution.n_compression_n,solution.m2_nmm,solution.m3_nmm)):
+                            issues.append(f"ANGLE_{j}:NONFINITE_SOLUTION")
+                            continue
+                        states.append(self._state(solution,target,count))
+                        kernel_states.append(solution)
+                    except (ColumnSectionCapacityError,ArithmeticError,ValueError) as exc:
+                        issues.append(f"ANGLE_{j}:NUMERIC_UNRESOLVED:{type(exc).__name__}")
+                complete=len(kernel_states)==angle_count
+                if not complete:
+                    status=SectionStatus.PARTIAL_ENVELOPE if kernel_states else SectionStatus.NUMERIC_UNRESOLVED
+                elif type(request) is EnvelopeAtAxialForce:
+                    status=SectionStatus.COMPLETE_ENVELOPE
+                else:
+                    if request.direction_m2.as_nmm==0 and request.direction_m3.as_nmm==0:
+                        issues.append("UNDEFINED_MOMENT_DIRECTION")
+                        status=SectionStatus.UNDEFINED_MOMENT_DIRECTION
+                    else:
+                        radial=adapter.radial(kernel_states,target,
+                                              request.direction_m2,request.direction_m3,
+                                              step.as_deg)
+                        if radial.status!="PROVEN" or not isfinite(radial.capacity_nmm):
+                            issues.append("RADIAL_UNRESOLVED:"+radial.status)
+                            status=SectionStatus.NUMERIC_UNRESOLVED
+                        else:
+                            cap=Moment.nmm(radial.capacity_nmm)
+                            boundary2=Moment.nmm(radial.boundary_m2_nmm)
+                            boundary3=Moment.nmm(radial.boundary_m3_nmm)
+                            status=SectionStatus.COMPLETE_RADIAL
+
+        return SectionCapacityResult(
+            section_ref=section.ref,
+            request_kind=type(request).__name__,
+            status=status,states=tuple(states),
+            radial_capacity=cap,
+            radial_boundary_m2=boundary2,
+            radial_boundary_m3=boundary3,
+            issues=tuple(issues),
+            requested_policy=policy,applied_policy=policy,
+            angle_step=step,
+            input_refs=problem.input_refs,
+            material_revision=section.material.revision,
+            law_ref=f"{section.material.rule.code_id}/{section.material.rule.edition}/{section.material.rule.rule_id}",
+            kernel_ref=KERNEL_REF,
+            source_geometry=(
+                ("b",section.profile.b.as_mm,"mm"),
+                ("h",section.profile.h.as_mm,"mm"),
+                ("bar_count",float(len(section.longitudinal.bars)),"count"),
+                ("As",section.longitudinal.total_area.as_mm2,"mm2"),
+            ),
+            root_quality=quality,
+        )

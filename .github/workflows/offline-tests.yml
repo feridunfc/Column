@@ -9,10 +9,11 @@ on:
 
 jobs:
   contracts-and-unittest:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, windows-latest]
         python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
@@ -23,3 +24,5 @@ jobs:
         run: python tools/check_architecture_contract.py
       - name: Run offline tests
         run: python -m unittest discover -s tests -v
+      - name: Execute offline section example
+        run: python -m examples.section_pilot

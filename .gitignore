@@ -1,0 +1,6 @@
+# Generated Python caches, machine-local virtual environments and IDE state
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.idea/
