@@ -135,6 +135,44 @@ class AngularCoverage:
         return not self.missing_indices
 
 
+class RadialHullStatus(StrEnum):
+    """Geometry of the finite sampled N–M2–M3 cross-section, not code PASS."""
+    ORIGIN_STRICT_INTERIOR_SAMPLED="ORIGIN_STRICT_INTERIOR_SAMPLED"
+    ORIGIN_NOT_INTERIOR_SAMPLED="ORIGIN_NOT_INTERIOR_SAMPLED"
+    DEGENERATE_SAMPLED_HULL="DEGENERATE_SAMPLED_HULL"
+
+
+@dataclass(frozen=True, slots=True)
+class RadialHullEvidence:
+    status: RadialHullStatus
+    usable_direction_count: int
+    near_origin_point_count: int
+    maximum_direction_gap: Angle | None
+    interior_margin: Angle | None
+    boundary_alignment_residual: Moment | None
+
+    def __post_init__(self):
+        if type(self.status) is not RadialHullStatus:
+            raise TypeError("RadialHullStatus required")
+        for name in ("usable_direction_count","near_origin_point_count"):
+            v=getattr(self,name)
+            if type(v) is not int or v<0:
+                raise ValueError(f"{name} must be a nonnegative int")
+        for name in ("maximum_direction_gap","interior_margin"):
+            v=getattr(self,name)
+            if v is not None and type(v) is not Angle:
+                raise TypeError(f"{name} must be Angle or None")
+        if (self.boundary_alignment_residual is not None and (
+            type(self.boundary_alignment_residual) is not Moment or
+            self.boundary_alignment_residual.as_nmm<0
+        )):
+            raise ValueError("boundary residual must be nonnegative Moment")
+        if self.status != RadialHullStatus.ORIGIN_STRICT_INTERIOR_SAMPLED and (
+            self.boundary_alignment_residual is not None
+        ):
+            raise ValueError("no positive radial boundary proof for non-interior hull")
+
+
 @dataclass(frozen=True, slots=True)
 class SectionCapacityResult:
     section_ref: RevisionRef
@@ -157,6 +195,7 @@ class SectionCapacityResult:
     frame_model_contract: FrameModelContract
     frame_basis_max_residual: float
     angular_coverage: AngularCoverage | None = None
+    radial_hull_evidence: RadialHullEvidence | None = None
     full_column_design_pass: bool = False
 
     def __post_init__(self):
@@ -194,9 +233,26 @@ class SectionCapacityResult:
             raise ValueError("direct strain state must have exactly one state without angular scan")
         if self.status==SectionStatus.UNDEFINED_MOMENT_DIRECTION and self.angular_coverage is not None:
             raise ValueError("undefined direction must not run an angular scan")
-        if self.radial_capacity is not None and (
-            self.status != SectionStatus.COMPLETE_RADIAL or
-            type(self.radial_capacity) is not Moment):
-            raise ValueError("radial capacity requires COMPLETE_RADIAL")
+        radial_values=(self.radial_capacity,
+                       self.radial_boundary_m2,self.radial_boundary_m3)
+        if self.radial_hull_evidence is not None and (
+            type(self.radial_hull_evidence) is not RadialHullEvidence
+        ):
+            raise TypeError("RadialHullEvidence required")
+        if self.status==SectionStatus.COMPLETE_RADIAL:
+            if (any(type(v) is not Moment for v in radial_values) or
+                self.radial_capacity.as_nmm <= 0 or
+                self.radial_hull_evidence is None or
+                self.radial_hull_evidence.status!=RadialHullStatus.ORIGIN_STRICT_INTERIOR_SAMPLED or
+                self.radial_hull_evidence.boundary_alignment_residual is None):
+                raise ValueError("radial capacity requires strictly interior hull and positive consistent boundary")
+            alignment=self.radial_hull_evidence.boundary_alignment_residual.as_nmm
+            radius=self.radial_capacity.as_nmm
+            atol=self.applied_policy.moment_tol.as_nmm
+            rtol=self.applied_policy.relative_tol
+            if alignment > atol+rtol*radius:
+                raise ValueError("radial boundary ray mismatch outside declared moment tolerance")
+        elif any(v is not None for v in radial_values):
+            raise ValueError("unresolved/non-radial result cannot publish a capacity boundary")
         if any("PASS" == issue for issue in self.issues):
             raise ValueError("no general code approval in section results")

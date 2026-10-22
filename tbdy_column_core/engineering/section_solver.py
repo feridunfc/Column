@@ -9,13 +9,16 @@ from math import isfinite
 from ..domain.section_requests import (
     SectionCapacityProblem, SectionCapacityResult, SectionStatus, SectionState,
     AtStrainState, EnvelopeAtAxialForce, RadialCapacityAtAxialForce,
-    AngularCoverage,
+    AngularCoverage, RadialHullStatus,
 )
 from ..domain.quantities import Force, Moment, Length, Angle
 from ..domain.coordinates import frame_basis_max_residual
 from ..domain.tolerances import within
 from ..physics.section_capacity import ColumnSectionCapacityError
 from .section_adapter import SectionKernelAdapter,UnsupportedSectionMaterial
+from .radial_geometry import (
+    audit_radial_moment_hull, radial_boundary_alignment_residual
+)
 
 KERNEL_REF="Column/legacy/column-pre-clean-20261022:physics/section_capacity.py@b2ac0114a5913e3088df6913de7537d7e0792b44"
 
@@ -44,6 +47,7 @@ class SectionSolver:
         issues=[]
         states=[]
         cap=boundary2=boundary3=None
+        hull_evidence=None
         step=None
         resolved_indices=None
         quality="NOT_RUN"
@@ -91,7 +95,8 @@ class SectionSolver:
                         section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
                         states,issues,cap,boundary2,boundary3,None,
                         problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None,
-                        problem.frame_model_contract,basis_error
+                        problem.frame_model_contract,basis_error,
+                        hull_evidence
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
@@ -134,29 +139,63 @@ class SectionSolver:
                 elif type(request) is EnvelopeAtAxialForce:
                     status=SectionStatus.COMPLETE_ENVELOPE
                 else:
-                    radial=adapter.radial(kernel_states,target,
-                                          request.direction_m2,request.direction_m3,
-                                          step.as_deg)
-                    if radial.status!="PROVEN" or not all(isfinite(v) for v in (
-                        radial.capacity_nmm,radial.boundary_m2_nmm,radial.boundary_m3_nmm)):
-                        issues.append("RADIAL_UNRESOLVED:"+radial.status)
+                    # Necessary precondition for a radius measured FROM (0,0):
+                    # the finite sampled convex hull must strictly enclose it.
+                    hull_evidence=audit_radial_moment_hull(
+                        kernel_states,
+                        moment_abs_tolerance=policy.moment_tol,
+                        relative_tolerance=policy.relative_tol,
+                    )
+                    if hull_evidence.status!=RadialHullStatus.ORIGIN_STRICT_INTERIOR_SAMPLED:
+                        issues.append("RADIAL_HULL:"+hull_evidence.status.value)
                         status=SectionStatus.NUMERIC_UNRESOLVED
                     else:
-                        cap=Moment.nmm(radial.capacity_nmm)
-                        boundary2=Moment.nmm(radial.boundary_m2_nmm)
-                        boundary3=Moment.nmm(radial.boundary_m3_nmm)
-                        status=SectionStatus.COMPLETE_RADIAL
+                        radial=adapter.radial(
+                            kernel_states,target,request.direction_m2,
+                            request.direction_m3,step.as_deg
+                        )
+                        if radial.status!="PROVEN" or not all(isfinite(v) for v in (
+                            radial.capacity_nmm,radial.boundary_m2_nmm,
+                            radial.boundary_m3_nmm
+                        )) or radial.capacity_nmm<=0:
+                            issues.append("RADIAL_UNRESOLVED:"+radial.status)
+                            status=SectionStatus.NUMERIC_UNRESOLVED
+                        else:
+                            alignment=radial_boundary_alignment_residual(
+                                demand_m2=request.direction_m2,
+                                demand_m3=request.direction_m3,
+                                radius=radial.capacity_nmm,
+                                boundary_m2=radial.boundary_m2_nmm,
+                                boundary_m3=radial.boundary_m3_nmm,
+                            )
+                            tolerance=(
+                                policy.moment_tol.as_nmm+
+                                policy.relative_tol*radial.capacity_nmm
+                            )
+                            if alignment.as_nmm>tolerance:
+                                issues.append("RADIAL_BOUNDARY_MISALIGNED_WITH_DEMAND_RAY")
+                                status=SectionStatus.NUMERIC_UNRESOLVED
+                            else:
+                                from dataclasses import replace
+                                hull_evidence=replace(
+                                    hull_evidence,
+                                    boundary_alignment_residual=alignment
+                                )
+                                cap=Moment.nmm(radial.capacity_nmm)
+                                boundary2=Moment.nmm(radial.boundary_m2_nmm)
+                                boundary3=Moment.nmm(radial.boundary_m3_nmm)
+                                status=SectionStatus.COMPLETE_RADIAL
 
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
             step,problem.input_refs,quality,resolved_indices,
-            problem.frame_model_contract,basis_error
+            problem.frame_model_contract,basis_error,hull_evidence
         )
 
     @staticmethod
     def _result(section,request,policy,status,states,issues,
                 cap,boundary2,boundary3,step,input_refs,quality,resolved_indices,
-                frame_contract,basis_error):
+                frame_contract,basis_error,hull_evidence):
         coverage=None
         if resolved_indices is not None:
             count=policy.angle_count
@@ -189,4 +228,5 @@ class SectionSolver:
             frame_model_contract=frame_contract,
             frame_basis_max_residual=basis_error,
             angular_coverage=coverage,
+            radial_hull_evidence=hull_evidence,
         )
