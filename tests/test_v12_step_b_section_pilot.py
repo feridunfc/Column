@@ -40,9 +40,9 @@ class Pilot(unittest.TestCase):
                 expected=evaluate_state(width_mm=400,depth_mm=600,bars=obs,
                     material=om,theta_deg=angle,c_mm=c)
                 result=calculate_section(SectionCapacityProblem(rc,angle,Length.mm(c),p))
-                self.assertAlmostEqual(result.axial_capacity.as_n,expected.n_n,delta=1)
-                self.assertAlmostEqual(result.m2_capacity.as_nmm,expected.m2_nmm,delta=2000)
-                self.assertAlmostEqual(result.m3_capacity.as_nmm,expected.m3_nmm,delta=2000)
+                self.assertAlmostEqual(result.state_n.as_n,expected.n_n,delta=1)
+                self.assertAlmostEqual(result.state_m2.as_nmm,expected.m2_nmm,delta=2000)
+                self.assertAlmostEqual(result.state_m3.as_nmm,expected.m3_nmm,delta=2000)
                 self.assertEqual(result.bar_count,len(obs))
                 self.assertFalse(result.full_column_design_pass)
                 self.assertEqual(section_capacity_report_json(result),section_capacity_report_json(result))
@@ -71,5 +71,25 @@ class Pilot(unittest.TestCase):
         rc,p=fixture()
         with self.assertRaises(ValueError):SectionKernelAdapter(rc,-1,1)
         with self.assertRaises(ValueError):SectionCapacityProblem(rc,0,Length.mm(200),replace(p,max_iterations=50))
+
+    def test_both_transverse_axes_reversed_are_normalized(self):
+        rc,p=fixture(variant=2)
+        normal=SectionKernelAdapter(rc).fixed_state(33,Length.mm(320))
+        reverse=SectionKernelAdapter(rc,-1,-1).fixed_state(33,Length.mm(320))
+        self.assertAlmostEqual(normal.n_compression_n,reverse.n_compression_n,delta=.001)
+        self.assertAlmostEqual(normal.m2_nmm,reverse.m2_nmm,delta=.01)
+        self.assertAlmostEqual(normal.m3_nmm,reverse.m3_nmm,delta=.01)
+
+    def test_fixed_axial_envelope_is_separate_numeric_result(self):
+        rc,p=fixture()
+        result=calculate_section(SectionCapacityProblem(
+            rc,33,Length.mm(320),replace(p,angle_count=8),
+            target_axial=Force.kn(500),
+            radial_demand_m2=Moment.kn_m(40),
+            radial_demand_m3=Moment.kn_m(20),
+        ))
+        self.assertIsNotNone(result.angle_step_deg)
+        self.assertIsNotNone(result.axial_residual)
+        self.assertFalse(result.full_column_design_pass)
 
 if __name__=="__main__":unittest.main()

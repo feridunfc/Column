@@ -4,7 +4,7 @@ No model/ETABS activity. Does not generate reinforcement or apply code-filter
 selection. Only physical signed axial and local moment coordinates are used.
 """
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import pi
 from ..domain.section_models import RCSection
 from ..domain.quantities import Force, Moment, Length
@@ -50,23 +50,42 @@ class SectionKernelAdapter:
             ))
         return tuple(result)
 
+    def _angle_kernel(self, angle_deg: float) -> float:
+        # Rotating both local transverse axes 180 degrees also rotates the
+        # neutral-axis normal. A single reflection was rejected above.
+        return (angle_deg + (180.0 if self.axis_2_sign == -1 else 0.0)) % 360.0
+
+    def _state_to_domain(self, state):
+        if self.axis_2_sign == 1:
+            return state
+        return replace(
+            state,
+            neutral_axis_angle_deg=(state.neutral_axis_angle_deg + 180.0) % 360.0,
+            m2_nmm=-state.m2_nmm, m3_nmm=-state.m3_nmm,
+            concrete_centroid_x2_mm=-state.concrete_centroid_x2_mm,
+            concrete_centroid_x3_mm=-state.concrete_centroid_x3_mm,
+        )
+
     def fixed_state(self, angle_deg: float, c: Length):
-        return evaluate_rectangular_column_capacity_state(
+        state = evaluate_rectangular_column_capacity_state(
             width_mm=self.section.profile.b.as_mm,
             depth_mm=self.section.profile.h.as_mm,
             bars=self._bars(), material=self._material(),
-            neutral_axis_angle_deg=angle_deg,
+            neutral_axis_angle_deg=self._angle_kernel(angle_deg),
             neutral_axis_depth_c_mm=c.as_mm,
         )
+        return self._state_to_domain(state)
 
     def envelope(self, n: Force, angle_count: int, axial_tolerance: Force):
-        return build_interaction_envelope_at_axial_force(
+        envelope = build_interaction_envelope_at_axial_force(
             width_mm=self.section.profile.b.as_mm,
             depth_mm=self.section.profile.h.as_mm,
             bars=self._bars(), material=self._material(),
             target_n_compression_n=n.as_n, angle_count=angle_count,
             axial_tolerance_n=axial_tolerance.as_n,
         )
+        return replace(envelope, states=tuple(self._state_to_domain(x)
+                                               for x in envelope.states))
 
     def radial_capacity(self, envelope, m2: Moment, m3: Moment):
         # Existing kernel expects local M2/M3 relative to section centroid.

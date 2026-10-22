@@ -43,9 +43,9 @@ class SectionCapacityProblem:
 class SectionCapacityResult:
     section_id: str
     status: str
-    axial_capacity: Force
-    m2_capacity: Moment
-    m3_capacity: Moment
+    state_n: Force
+    state_m2: Moment
+    state_m3: Moment
     neutral_axis_angle_deg: float
     neutral_axis_depth: Length
     bar_count: int
@@ -116,9 +116,9 @@ class SectionSolver:
         return SectionCapacityResult(
             section_id=problem.section.section_id,
             status=status,
-            axial_capacity=Force.n(result.n_compression_n),
-            m2_capacity=Moment.nmm(result.m2_nmm),
-            m3_capacity=Moment.nmm(result.m3_nmm),
+            state_n=Force.n(result.n_compression_n),
+            state_m2=Moment.nmm(result.m2_nmm),
+            state_m3=Moment.nmm(result.m3_nmm),
             neutral_axis_angle_deg=result.neutral_axis_angle_deg,
             neutral_axis_depth=Length.mm(result.neutral_axis_depth_c_mm),
             bar_count=len(problem.section.longitudinal.bars),
@@ -143,9 +143,9 @@ def section_capacity_report_json(result: SectionCapacityResult) -> str:
     d = {
         "schema":"column.section_capacity.v1",
         "section_id":result.section_id, "status":result.status,
-        "N_n":result.axial_capacity.as_n,
-        "M2_nmm":result.m2_capacity.as_nmm,
-        "M3_nmm":result.m3_capacity.as_nmm,
+        "state_N_n":result.state_n.as_n,
+        "state_M2_nmm":result.state_m2.as_nmm,
+        "state_M3_nmm":result.state_m3.as_nmm,
         "neutral_axis_angle_deg":result.neutral_axis_angle_deg,
         "neutral_axis_depth_mm":result.neutral_axis_depth.as_mm,
         "bar_count":result.bar_count,
