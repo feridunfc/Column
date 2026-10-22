@@ -196,10 +196,9 @@ class EvidenceAndOutcomes(unittest.TestCase):
 
     def test_evidence_revision_and_producer_binding_fail_closed(self):
         b=AnalysisBundle((RoleBinding("DESIGN_FORCES",self.run),))
-        incompatible=replace(self.scope,evidence=EvidenceRef("OTHER",
-                 self.scope.evidence.source,RevisionRef("column","P","M2")))
         with self.assertRaises(ValueError):
-            EvidenceCatalog((incompatible,))
+            replace(self.scope,evidence=EvidenceRef("OTHER",
+                    self.scope.evidence.source,RevisionRef("column","P","M2")))
         wrong_producer=replace(
              self.scope,evidence=EvidenceRef("FOREIGN",
                  replace(self.scope.evidence.source,producer="OTHER"),
