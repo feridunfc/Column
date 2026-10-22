@@ -83,6 +83,15 @@ def main():
           f"delta_nmm={refinement.observed_delta.as_nmm if refinement.observed_delta else 'UNRESOLVED'}, "+
           f"budget_nmm={refinement.numeric_budget.as_nmm}")
     print("B2_OBSERVED_NUMERIC_EVIDENCE_ONLY; NOT A CODE PASS")
+    from tbdy_column_core.reporting.section_receipt import verify_section_report_json
+    sample=calculate_section(fixture_problem(layout="B"))
+    report=section_report_json(sample)
+    import json
+    record=json.loads(report)
+    assert verify_section_report_json(report)
+    assert record["output_receipt"]["input_sha256"]==sample.input_fingerprint.sha256
+    print("B6_OUTPUT_RECEIPT_MATCH; UNSIGNED CONTENT CHECKSUM ONLY")
+
 
 
 if __name__=="__main__":

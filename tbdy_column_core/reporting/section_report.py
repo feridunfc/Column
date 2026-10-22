@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 from html import escape
 from ..domain.section_requests import SectionCapacityResult
+from .section_receipt import output_receipt_for_payload
 
 
-def section_payload(result: SectionCapacityResult)->dict:
+def _raw_section_payload(result: SectionCapacityResult)->dict:
     if type(result) is not SectionCapacityResult:
         raise TypeError("SectionCapacityResult required")
     requested=result.requested_policy
@@ -88,6 +89,13 @@ def section_payload(result: SectionCapacityResult)->dict:
     }
 
 
+def section_payload(result: SectionCapacityResult)->dict:
+    """One canonical passive projection with B6 report-content receipt."""
+    payload=_raw_section_payload(result)
+    payload["output_receipt"]=output_receipt_for_payload(payload)
+    return payload
+
+
 def section_report_json(result: SectionCapacityResult)->str:
     return json.dumps(section_payload(result),sort_keys=True,
                       ensure_ascii=False,allow_nan=False,separators=(",",":"))
@@ -110,6 +118,9 @@ def section_report_html(result: SectionCapacityResult)->str:
         lines.append(f"<dt>{cell(k)}</dt><dd>{cell(data[k])}</dd>")
     lines.append("</dl><h2>Calculation input identity</h2><dl>")
     for key,value in data["input_fingerprint"].items():
+        lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
+    lines.append("</dl><h2>Output checksum (unsigned)</h2><dl>")
+    for key,value in data["output_receipt"].items():
         lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
     lines.append("</dl><h2>Local reference frame (declared, not transformed)</h2><dl>")
     for key,value in data["frame_model"].items():
