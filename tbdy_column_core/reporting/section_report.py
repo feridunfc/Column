@@ -111,6 +111,13 @@ def section_report_html(result: SectionCapacityResult)->str:
     lines.append("</dl><h2>Calculation input identity</h2><dl>")
     for key,value in data["input_fingerprint"].items():
         lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
+    # B6: unsigned digest of this exact passive payload. Hashing is a
+    # serialization check, not a structural calculation or an attestation.
+    from .section_receipt import receipt_for_payload
+    receipt=receipt_for_payload(data)
+    lines.append("</dl><h2>Result payload integrity (unsigned)</h2><dl>")
+    for key,value in receipt.items():
+        lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
     lines.append("</dl><h2>Local reference frame (declared, not transformed)</h2><dl>")
     for key,value in data["frame_model"].items():
         lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
