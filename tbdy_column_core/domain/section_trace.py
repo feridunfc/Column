@@ -6,7 +6,7 @@ full problem/result fingerprint. No structural physics is performed here.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 
@@ -93,7 +93,9 @@ def encode_section_input(section: RCSection) -> str:
 @dataclass(frozen=True,slots=True)
 class SectionInputTrace:
     """Immutable exact canonical serialization captured with a numeric result."""
-    section: RCSection
+    # Canonical JSON owns value-equality, independent of original bar ordering.
+    # The validated original typed input remains available for diagnostics.
+    section: RCSection = field(compare=False, repr=False)
     canonical_json: str
     sha256: str
 

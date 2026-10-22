@@ -488,8 +488,10 @@ class SectionB1Tests(unittest.TestCase):
         rotated=replace(a.section.longitudinal,
                         bars=tuple(reversed(a.section.longitudinal.bars)))
         reversed_problem=replace(a,section=replace(a.section,longitudinal=rotated))
-        self.assertEqual(r.input_trace.sha256,
-                         calculate_section(reversed_problem).input_trace.sha256)
+        alternate=calculate_section(reversed_problem)
+        self.assertEqual(r.input_trace.sha256,alternate.input_trace.sha256)
+        self.assertEqual(r.input_trace,alternate.input_trace)
+        self.assertEqual(r,alternate)
         other=fixture_problem(layout="A",units="mm")
         self.assertNotEqual(r.input_trace.sha256,calculate_section(other).input_trace.sha256)
         changed_law=replace(a.section.material,fcd=Stress.mpa(20.0))
