@@ -9,6 +9,7 @@ from math import isfinite
 from ..domain.section_requests import (
     SectionCapacityProblem, SectionCapacityResult, SectionStatus, SectionState,
     AtStrainState, EnvelopeAtAxialForce, RadialCapacityAtAxialForce,
+    AngularCoverage,
 )
 from ..domain.quantities import Force, Moment, Length, Angle
 from ..domain.tolerances import within
@@ -77,12 +78,13 @@ class SectionSolver:
                     return self._result(
                         section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
                         states,issues,cap,boundary2,boundary3,None,
-                        problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION"
+                        problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
                 quality="DUAL_GRID_SINGLE_SAMPLED_BRACKET_NOT_GLOBAL_ROOT_PROOF"
                 kernel_states=[]
+                resolved_indices=[]
                 for j in range(angle_count):
                     angle=Angle.deg(j*360/angle_count)
                     try:
@@ -110,6 +112,7 @@ class SectionSolver:
                             continue
                         states.append(self._state(solution,target,audit))
                         kernel_states.append(solution)
+                        resolved_indices.append(j)
                     except (ColumnSectionCapacityError,ArithmeticError,ValueError) as exc:
                         issues.append(f"ANGLE_{j}:NUMERIC_UNRESOLVED:{type(exc).__name__}")
                 complete=len(kernel_states)==angle_count
@@ -133,12 +136,21 @@ class SectionSolver:
 
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
-            step,problem.input_refs,quality
+            step,problem.input_refs,quality,
+            None if type(request) is AtStrainState else resolved_indices
         )
 
     @staticmethod
     def _result(section,request,policy,status,states,issues,
-                cap,boundary2,boundary3,step,input_refs,quality):
+                cap,boundary2,boundary3,step,input_refs,quality,resolved_indices):
+        coverage=None
+        if resolved_indices is not None:
+            count=policy.angle_count
+            observed=frozenset(resolved_indices)
+            coverage=AngularCoverage(
+                count,tuple(sorted(observed)),
+                tuple(i for i in range(count) if i not in observed)
+            )
         return SectionCapacityResult(
             section_ref=section.ref,
             request_kind=type(request).__name__,
@@ -160,4 +172,5 @@ class SectionSolver:
                 ("As",section.longitudinal.total_area.as_mm2,"mm2"),
             ),
             root_quality=quality,
+            angular_coverage=coverage,
         )

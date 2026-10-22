@@ -285,6 +285,71 @@ class SectionB1Tests(unittest.TestCase):
         self.assertIn("INCOMPLETE_NUMERICAL_CAPACITY",diag.issues)
 
 
+
+    def test_b3_angular_coverage_exact_and_partial(self):
+        from unittest.mock import patch
+        from tbdy_column_core.domain.section_requests import AngularCoverage
+        from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
+        p=fixture_problem(layout="B",angle_count=8,
+            request=EnvelopeAtAxialForce(Force.kn(500)))
+        full=calculate_section(p)
+        self.assertTrue(full.angular_coverage.is_complete)
+        self.assertEqual(full.angular_coverage.resolved_indices,tuple(range(8)))
+        self.assertEqual(full.angular_coverage.missing_indices,())
+        raw=json.loads(section_report_json(full))
+        self.assertEqual(raw["angular_coverage"]["attempted_count"],8)
+        self.assertTrue(raw["angular_coverage"]["complete"])
+        original=SectionKernelAdapter.sample_axial_brackets
+        def fail_one(adapter, angle, target, material, bars, *, force_atol_n):
+            if angle.as_deg==45.:
+                raise ValueError("synthetic angle interruption")
+            return original(adapter,angle,target,material,bars,
+                            force_atol_n=force_atol_n)
+        with patch.object(SectionKernelAdapter,"sample_axial_brackets",fail_one):
+            partial=calculate_section(p)
+        self.assertEqual(partial.status,SectionStatus.PARTIAL_ENVELOPE)
+        self.assertEqual(partial.angular_coverage.missing_indices,(1,))
+        self.assertEqual(len(partial.states),7)
+        parsed=json.loads(section_report_json(partial))
+        self.assertEqual(parsed["angular_coverage"]["missing_indices"],[1])
+        self.assertIn("Missing: [1]",section_report_html(partial))
+        self.assertFalse(partial.full_column_design_pass)
+        with self.assertRaises(ValueError):
+            AngularCoverage(8,(0,1),(1,2,3,4,5,6,7))
+        with self.assertRaises(ValueError):
+            replace(full,angular_coverage=partial.angular_coverage)
+
+    def test_b3_public_checked_boundary_and_programmer_errors(self):
+        from tbdy_column_core.application.services import (
+            validate_section_problem,calculate_section_validated,ValidationStatus)
+        p=fixture_problem()
+        invalid=calculate_section_validated({"section":p.section})
+        self.assertEqual(invalid.validation.status,ValidationStatus.INVALID_INPUT)
+        self.assertIsNone(invalid.result)
+        valid=calculate_section_validated(p)
+        self.assertEqual(valid.validation.status,ValidationStatus.READY)
+        self.assertEqual(valid.result,calculate_section(p))
+        self.assertEqual(valid.result.status,SectionStatus.NUMERIC_STATE)
+        bad_frame=replace(p.frame_model_contract,reference="UNSUPPORTED_OFFSET")
+        bad=calculate_section_validated(replace(p,frame_model_contract=bad_frame))
+        self.assertEqual(bad.validation.status,ValidationStatus.UNSUPPORTED_INPUT)
+        self.assertIsNone(bad.result)
+        with self.assertRaises(TypeError):
+            calculate_section({"section":p.section})
+
+    def test_b3_input_source_revision_propagates_to_both_reports(self):
+        p=fixture_problem()
+        result=calculate_section(p)
+        parsed=json.loads(section_report_json(result))
+        ref=parsed["input_refs"][0]
+        self.assertEqual(ref["producer"],p.input_refs[0].source.producer)
+        self.assertEqual(ref["declared_units"],p.input_refs[0].source.declared_units)
+        self.assertEqual(ref["input_identifier"],p.input_refs[0].input_revision.identifier)
+        html=section_report_html(result)
+        for val in ("source_identifier","declared_units","acquisition_ref",
+                    "input_identifier",str(parsed["section_ref"]["id"])):
+            self.assertIn(val,html)
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)

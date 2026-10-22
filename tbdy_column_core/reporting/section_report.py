@@ -43,14 +43,28 @@ def section_payload(result: SectionCapacityResult)->dict:
         "radial_boundary_m2_nmm":None if result.radial_boundary_m2 is None else result.radial_boundary_m2.as_nmm,
         "radial_boundary_m3_nmm":None if result.radial_boundary_m3 is None else result.radial_boundary_m3.as_nmm,
         "angle_step_deg":None if result.angle_step is None else result.angle_step.as_deg,
+        "angular_coverage":None if result.angular_coverage is None else {
+            "attempted_count":result.angular_coverage.attempted_count,
+            "resolved_indices":list(result.angular_coverage.resolved_indices),
+            "missing_indices":list(result.angular_coverage.missing_indices),
+            "complete":result.angular_coverage.is_complete,
+        },
         "issues":list(result.issues),
         "numeric_root_quality":result.root_quality,
         "requested_policy":policy(requested),
         "applied_policy":policy(applied),
         "geometry":[{"name":n,"value":v,"unit":u} for n,v,u in result.source_geometry],
-        "input_refs":[{"evidence_id":r.evidence_id,
-                        "source_record":r.source.record_identifier,
-                        "input_revision":r.input_revision.revision} for r in result.input_refs],
+        "input_refs":[{
+            "evidence_id":item.evidence_id,
+            "producer":item.source.producer,
+            "source_identifier":item.source.source_identifier,
+            "source_record":item.source.record_identifier,
+            "declared_units":item.source.declared_units,
+            "acquisition_ref":item.source.acquisition_ref,
+            "input_namespace":item.input_revision.namespace,
+            "input_identifier":item.input_revision.identifier,
+            "input_revision":item.input_revision.revision,
+        } for item in result.input_refs],
         "law_ref":result.law_ref,
         "kernel_ref":result.kernel_ref,
         "full_column_design_pass":False,
@@ -87,7 +101,16 @@ def section_report_html(result: SectionCapacityResult)->str:
     lines.append("<tr>"+"".join(f"<th>{cell(k)}</th>" for k in cols)+"</tr>")
     for item in data["states"]:
         lines.append("<tr>"+"".join(f"<td>{cell(item[k])}</td>" for k in cols)+"</tr>")
-    lines.append("</table><h2>Policies</h2>")
+    lines.append("</table><h2>Angular coverage</h2>")
+    coverage=data["angular_coverage"]
+    if coverage is None:
+        lines.append("<p>NOT APPLICABLE — no angular envelope sampled</p>")
+    else:
+        lines.append(f"<p>Attempted: {cell(coverage['attempted_count'])}; Resolved: "
+                     f"{cell(len(coverage['resolved_indices']))}; Missing: "
+                     f"{cell(coverage['missing_indices'])}; Complete: "
+                     f"{cell(coverage['complete'])}</p>")
+    lines.append("<h2>Policies</h2>")
     for key in ("requested_policy","applied_policy"):
         lines.append(f"<h3>{cell(key)}</h3><dl>")
         for k,v in data[key].items():
@@ -102,7 +125,12 @@ def section_report_html(result: SectionCapacityResult)->str:
     for out in data["outside_scope"]:
         lines.append(f"<li>NOT EVALUATED: {cell(out)}</li>")
     lines.append("</ul><h2>Evidence</h2>")
+    lines.append(f"<p>Section: {cell(data['section_ref'])}; Material revision: "
+                 f"{cell(data['material_revision'])}</p>")
     for item in data["input_refs"]:
-        lines.append(f"<p>{cell(item['evidence_id'])} / {cell(item['source_record'])} / {cell(item['input_revision'])}</p>")
+        for key in ("evidence_id","producer","source_identifier","source_record",
+                    "declared_units","acquisition_ref","input_namespace",
+                    "input_identifier","input_revision"):
+            lines.append(f"<p>{cell(key)}: {cell(item[key])}</p>")
     lines.append("</body></html>")
     return "\n".join(lines)
