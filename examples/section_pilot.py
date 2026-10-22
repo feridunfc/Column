@@ -83,6 +83,14 @@ def main():
           f"delta_nmm={refinement.observed_delta.as_nmm if refinement.observed_delta else 'UNRESOLVED'}, "+
           f"budget_nmm={refinement.numeric_budget.as_nmm}")
     print("B2_OBSERVED_NUMERIC_EVIDENCE_ONLY; NOT A CODE PASS")
+    from tbdy_column_core.reporting.receipt import (
+        seal_section_report,verify_sealed_section_report,
+    )
+    snapshot=seal_section_report(calculate_section(fixture_problem(layout="B")))
+    evidence=verify_sealed_section_report(snapshot)
+    assert evidence.bytes_match
+    print("B6_OUTPUT_RECEIPT_OK; declared-input-to-output JSON/HTML bytes matched; "
+          "NOT A SOURCE SIGNATURE OR ENGINEERING PASS")
 
 
 if __name__=="__main__":
