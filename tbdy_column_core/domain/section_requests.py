@@ -10,6 +10,7 @@ from .identity import EvidenceRef, RevisionRef, required
 from .coordinates import LocalFrame, AxialSignConvention
 from .tolerances import NumericalPolicy
 from .section_models import RCSection
+from .section_trace import SectionInputTrace
 
 
 @dataclass(frozen=True, slots=True)
@@ -156,6 +157,7 @@ class SectionCapacityResult:
     root_quality: str
     frame_model_contract: FrameModelContract
     frame_basis_max_residual: float
+    input_trace: SectionInputTrace
     angular_coverage: AngularCoverage | None = None
     full_column_design_pass: bool = False
 
@@ -164,6 +166,12 @@ class SectionCapacityResult:
             raise TypeError("SectionStatus required")
         if type(self.frame_model_contract) is not FrameModelContract:
             raise TypeError("explicit result frame contract required")
+        if type(self.input_trace) is not SectionInputTrace:
+            raise TypeError("exact captured section input trace is required")
+        if self.input_trace.section.ref!=self.section_ref:
+            raise ValueError("section input trace revision mismatches result")
+        if self.input_trace.section.material.revision!=self.material_revision:
+            raise ValueError("section input trace material revision mismatches result")
         residual=finite_real(self.frame_basis_max_residual,
                              field="frame_basis_max_residual")
         if residual<0 or residual>self.applied_policy.axis_tol:

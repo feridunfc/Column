@@ -448,6 +448,82 @@ class SectionB1Tests(unittest.TestCase):
         self.assertEqual(parsed["frame_model"]["requested_axis_tolerance"],
                          p.numerical_policy.axis_tol)
 
+
+    def test_b5_complete_cage_snapshot_and_consistent_json_html(self):
+        from tbdy_column_core.domain.section_trace import TRACE_SCHEMA
+        p=fixture_problem(layout="B",request=EnvelopeAtAxialForce(
+            Force.kn(500)),angle_count=8)
+        r=calculate_section(p)
+        doc=json.loads(section_report_json(r))
+        snap=doc["section_input"]
+        self.assertEqual(snap["schema"],TRACE_SCHEMA)
+        self.assertEqual(snap["geometry"],{"b_mm":400.0,"h_mm":600.0})
+        self.assertEqual(snap["longitudinal"]["clear_cover_mm"],30.0)
+        self.assertEqual(snap["longitudinal"]["tie_diameter_mm"],10.0)
+        self.assertEqual(len(snap["longitudinal"]["bars"]),6)
+        self.assertEqual(
+            [b["bar_id"] for b in snap["longitudinal"]["bars"]],
+            sorted(b.bar_id for b in p.section.longitudinal.bars)
+        )
+        self.assertEqual(snap["material"]["concrete"]["fck_mpa"],35.)
+        self.assertAlmostEqual(snap["material"]["concrete"]["fcd_mpa"],35/1.5)
+        self.assertEqual(snap["material"]["concrete"]["k1"],0.79)
+        self.assertEqual(snap["material"]["concrete"]["epsilon_cu"],0.003)
+        self.assertEqual(snap["material"]["steel_laws"][0]["steel_ref"],"B420C")
+        self.assertAlmostEqual(snap["material"]["steel_laws"][0]["fyd_mpa"],420/1.15)
+        self.assertEqual(snap["material"]["steel_laws"][0]["es_mpa"],200000)
+        self.assertEqual(doc["section_input_sha256"],r.input_trace.sha256)
+        self.assertEqual(len(doc["section_input_sha256"]),64)
+        html=section_report_html(r)
+        for v in ("SHA-256:",doc["section_input_sha256"],"b1","b6",
+                  "fck_mpa","fcd_mpa","tie diameter","B420C"):
+            self.assertIn(v,html)
+        self.assertFalse(doc["full_column_design_pass"])
+
+    def test_b5_fingerprint_stable_reorder_units_and_different_actual_cages(self):
+        a=fixture_problem(layout="B",units="mm")
+        alt=fixture_problem(layout="B",units="cm")
+        r=calculate_section(a)
+        self.assertEqual(r.input_trace.sha256,calculate_section(alt).input_trace.sha256)
+        rotated=replace(a.section.longitudinal,
+                        bars=tuple(reversed(a.section.longitudinal.bars)))
+        reversed_problem=replace(a,section=replace(a.section,longitudinal=rotated))
+        alternate=calculate_section(reversed_problem)
+        self.assertEqual(r.input_trace.sha256,alternate.input_trace.sha256)
+        self.assertEqual(r.input_trace,alternate.input_trace)
+        self.assertEqual(r,alternate)
+        other=fixture_problem(layout="A",units="mm")
+        self.assertNotEqual(r.input_trace.sha256,calculate_section(other).input_trace.sha256)
+        changed_law=replace(a.section.material,fcd=Stress.mpa(20.0))
+        revised=replace(a,section=replace(a.section,material=changed_law))
+        self.assertNotEqual(r.input_trace.sha256,
+                            calculate_section(revised).input_trace.sha256)
+        different_policy=replace(a,numerical_policy=replace(
+            a.numerical_policy,angle_count=8))
+        self.assertEqual(r.input_trace.sha256,
+                         calculate_section(different_policy).input_trace.sha256)
+
+    def test_b5_input_snapshot_kept_on_unsupported_result_and_tampering_blocked(self):
+        from tbdy_column_core.domain.section_trace import SectionInputTrace
+        p=fixture_problem(layout="B",angle_count=8,
+            request=EnvelopeAtAxialForce(Force.kn(500)))
+        first=replace(p.section.longitudinal.bars[0],steel_ref="UNKNOWN")
+        changed=replace(p.section.longitudinal,
+                        bars=(first,)+p.section.longitudinal.bars[1:])
+        problem=replace(p,section=replace(p.section,longitudinal=changed))
+        result=calculate_section(problem)
+        self.assertEqual(result.status,SectionStatus.UNSUPPORTED_MATERIAL)
+        info=json.loads(section_report_json(result))["section_input"]
+        self.assertEqual(info["longitudinal"]["bars"][0]["steel_ref"],"UNKNOWN")
+        self.assertIn("UNKNOWN",section_report_html(result))
+        with self.assertRaises(ValueError):
+            replace(result.input_trace,sha256="0"*64)
+        with self.assertRaises(ValueError):
+            replace(result.input_trace,canonical_json="{}")
+        another=fixture_problem(layout="A")
+        with self.assertRaises(ValueError):
+            replace(result,input_trace=SectionInputTrace.capture(another.section))
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)

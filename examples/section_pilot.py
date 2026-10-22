@@ -83,6 +83,17 @@ def main():
           f"delta_nmm={refinement.observed_delta.as_nmm if refinement.observed_delta else 'UNRESOLVED'}, "+
           f"budget_nmm={refinement.numeric_budget.as_nmm}")
     print("B2_OBSERVED_NUMERIC_EVIDENCE_ONLY; NOT A CODE PASS")
+    from json import loads
+    cage_a=calculate_section(fixture_problem(layout="A"))
+    cage_b=calculate_section(fixture_problem(layout="B"))
+    snapshot=loads(section_report_json(cage_b))["section_input"]
+    assert len(snapshot["longitudinal"]["bars"])==6
+    assert len(loads(section_report_json(cage_a))["section_input"]["longitudinal"]["bars"])==4
+    assert cage_a.input_trace.sha256!=cage_b.input_trace.sha256
+    print("B5_INPUT_TRACE: two distinct supplied cages, "+
+          f"layout_B_bars={len(snapshot['longitudinal']['bars'])}, "+
+          f"layout_B_SHA256={cage_b.input_trace.sha256[:16]}…")
+    print("B5_DECLARED_INPUT_TRACE_OK; NOT AUTHENTICATED_SOURCE")
 
 
 if __name__=="__main__":

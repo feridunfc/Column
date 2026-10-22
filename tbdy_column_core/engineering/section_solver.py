@@ -13,6 +13,7 @@ from ..domain.section_requests import (
 )
 from ..domain.quantities import Force, Moment, Length, Angle
 from ..domain.coordinates import frame_basis_max_residual
+from ..domain.section_trace import SectionInputTrace
 from ..domain.tolerances import within
 from ..physics.section_capacity import ColumnSectionCapacityError
 from .section_adapter import SectionKernelAdapter,UnsupportedSectionMaterial
@@ -39,6 +40,7 @@ class SectionSolver:
         if type(problem) is not SectionCapacityProblem:
             raise TypeError("SectionCapacityProblem required")
         section=problem.section
+        input_trace=SectionInputTrace.capture(section)
         request=problem.request
         policy=problem.numerical_policy
         issues=[]
@@ -91,7 +93,7 @@ class SectionSolver:
                         section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
                         states,issues,cap,boundary2,boundary3,None,
                         problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None,
-                        problem.frame_model_contract,basis_error
+                        problem.frame_model_contract,basis_error,input_trace
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
@@ -150,13 +152,13 @@ class SectionSolver:
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
             step,problem.input_refs,quality,resolved_indices,
-            problem.frame_model_contract,basis_error
+            problem.frame_model_contract,basis_error,input_trace
         )
 
     @staticmethod
     def _result(section,request,policy,status,states,issues,
                 cap,boundary2,boundary3,step,input_refs,quality,resolved_indices,
-                frame_contract,basis_error):
+                frame_contract,basis_error,input_trace):
         coverage=None
         if resolved_indices is not None:
             count=policy.angle_count
@@ -188,5 +190,6 @@ class SectionSolver:
             root_quality=quality,
             frame_model_contract=frame_contract,
             frame_basis_max_residual=basis_error,
+            input_trace=input_trace,
             angular_coverage=coverage,
         )

@@ -22,6 +22,9 @@ def section_payload(result: SectionCapacityResult)->dict:
         }
     return {
         "schema":"column.section.numeric.v1.3-b1",
+        "section_input":json.loads(result.input_trace.canonical_json),
+        "section_input_sha256":result.input_trace.sha256,
+        "section_input_fingerprint_scope":"DECLARED_SECTION_ONLY_NOT_AUTHENTICATION",
         "section_ref":{"namespace":result.section_ref.namespace,
                        "id":result.section_ref.identifier,
                        "revision":result.section_ref.revision},
@@ -106,7 +109,36 @@ def section_report_html(result: SectionCapacityResult)->str:
     lines.append("</dl><h2>Local reference frame (declared, not transformed)</h2><dl>")
     for key,value in data["frame_model"].items():
         lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
-    lines.append("</dl><h2>Input section</h2><table>")
+    snapshot=data["section_input"]
+    mat=snapshot["material"]
+    concrete=mat["concrete"]
+    cage=snapshot["longitudinal"]
+    lines.append("</dl><h2>Actual declared section / input fingerprint</h2>")
+    lines.append(f"<p>SHA-256: {cell(data['section_input_sha256'])} "
+                 f"({cell(data['section_input_fingerprint_scope'])})</p>")
+    lines.append(f"<p>Section revision: {cell(snapshot['section_ref'])}; "
+                 f"Material revision: {cell(mat['revision'])}; "
+                 f"Layout revision: {cell(cage['revision'])}</p>")
+    lines.append("<h3>Material model — declared design parameters</h3><dl>")
+    for name in ("fck_mpa","fcd_mpa","k1","epsilon_cu"):
+        lines.append(f"<dt>{cell(name)}</dt><dd>{cell(concrete[name])}</dd>")
+    lines.append(f"<dt>TS500 rule</dt><dd>{cell(mat['rule'])}</dd>")
+    for law in mat["steel_laws"]:
+        lines.append(f"<p>Steel {cell(law['steel_ref'])}: "
+                     f"fyd={cell(law['fyd_mpa'])} MPa; "
+                     f"Es={cell(law['es_mpa'])} MPa; "
+                     f"revision={cell(law['revision'])}</p>")
+    lines.append("</dl><h3>Supplied longitudinal bars (section local 2/3)</h3>")
+    lines.append(f"<p>Clear cover={cell(cage['clear_cover_mm'])} mm; "
+                 f"tie diameter={cell(cage['tie_diameter_mm'])} mm</p>")
+    lines.append("<table><tr><th>Bar ID</th><th>x2 [mm]</th>"
+                 "<th>x3 [mm]</th><th>Diameter [mm]</th><th>Steel ref</th></tr>")
+    for bar in cage["bars"]:
+        lines.append("<tr>"+"".join(
+            f"<td>{cell(bar[key])}</td>"
+            for key in ("bar_id","x2_mm","x3_mm","diameter_mm","steel_ref")
+        )+"</tr>")
+    lines.append("</table><h2>Input section</h2><table>")
     for item in data["geometry"]:
         lines.append(f"<tr><th>{cell(item['name'])}</th><td>{cell(item['value'])}</td><td>{cell(item['unit'])}</td></tr>")
     lines.append("</table><h2>Numerical states</h2><table>")
