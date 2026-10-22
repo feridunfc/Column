@@ -135,6 +135,21 @@ class AngularCoverage:
         return not self.missing_indices
 
 
+@dataclass(frozen=True,slots=True)
+class CalculationInputFingerprint:
+    """Declared numerical input identity; NOT external source authentication."""
+    SCHEMA="column.section.input.sha256.v1"
+    schema: str
+    sha256: str
+    def __post_init__(self):
+        from string import hexdigits
+        if self.schema!=self.SCHEMA:
+            raise ValueError("unsupported calculation-input fingerprint schema")
+        if type(self.sha256) is not str or len(self.sha256)!=64 or any(
+            char not in "0123456789abcdef" for char in self.sha256):
+            raise ValueError("SHA256 digest must be 64 lowercase hexadecimal chars")
+
+
 @dataclass(frozen=True, slots=True)
 class SectionCapacityResult:
     section_ref: RevisionRef
@@ -154,6 +169,7 @@ class SectionCapacityResult:
     kernel_ref: str
     source_geometry: tuple[tuple[str,float,str],...]
     root_quality: str
+    input_fingerprint: CalculationInputFingerprint
     frame_model_contract: FrameModelContract
     frame_basis_max_residual: float
     angular_coverage: AngularCoverage | None = None
@@ -162,6 +178,8 @@ class SectionCapacityResult:
     def __post_init__(self):
         if type(self.status) is not SectionStatus:
             raise TypeError("SectionStatus required")
+        if type(self.input_fingerprint) is not CalculationInputFingerprint:
+            raise TypeError("explicit calculation input fingerprint required")
         if type(self.frame_model_contract) is not FrameModelContract:
             raise TypeError("explicit result frame contract required")
         residual=finite_real(self.frame_basis_max_residual,
