@@ -7,7 +7,7 @@ from tbdy_column_core.domain.section_models import RectangularSection,ConcreteMa
 from tbdy_column_core.domain.tolerances import NumericalPolicy
 from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
 from tbdy_column_core.engineering.section_solver import SectionCapacityProblem,calculate_section,section_capacity_report_json
-from tests.independent.oracle import OracleBar,OracleMaterial,evaluate_state
+from tests.independent.oracle import OracleBar,OracleMaterial,evaluate_state,radial_capacity_dense_convex
 
 def fixture(units="mm",variant=1):
     f=Length.mm if units=="mm" else Length.cm
@@ -91,5 +91,36 @@ class Pilot(unittest.TestCase):
         self.assertIsNotNone(result.angle_step_deg)
         self.assertIsNotNone(result.axial_residual)
         self.assertFalse(result.full_column_design_pass)
+
+    def test_pmm_radial_capacity_independent_dense_oracle(self):
+        # Independent 144-direction Gauss-Legendre + all-bracket solver
+        # vs production 72-direction polygon/monotone hull/ray solver.
+        for variant in (1,2):
+            rc,p=fixture(variant=variant)
+            obs=tuple(OracleBar(i,b.x2.as_mm,b.x3.as_mm,
+                                b.diameter.as_mm,pi*b.diameter.as_mm**2/4)
+                      for i,b in enumerate(rc.longitudinal.bars))
+            oracle=radial_capacity_dense_convex(
+                width_mm=400,depth_mm=600,bars=obs,
+                material=OracleMaterial(35,35/1.5,500/1.15,.79),
+                target_n=500_000,demand_m2_nmm=40_000_000,
+                demand_m3_nmm=20_000_000,angle_count=144,
+                root_scan_count=160,axial_tolerance_n=1.0,
+            )
+            result=calculate_section(SectionCapacityProblem(
+                rc,33,Length.mm(320),p,
+                target_axial=Force.kn(500),
+                radial_demand_m2=Moment.kn_m(40),
+                radial_demand_m3=Moment.kn_m(20),
+            ))
+            self.assertEqual(oracle.status,"PROVEN")
+            self.assertTrue(result.converged)
+            self.assertEqual(result.radial_status,"PROVEN")
+            self.assertIsNotNone(result.radial_capacity)
+            self.assertAlmostEqual(
+                result.radial_capacity.as_nmm,oracle.capacity_nmm,
+                delta=.03*oracle.capacity_nmm,
+            )
+            self.assertFalse(result.full_column_design_pass)
 
 if __name__=="__main__":unittest.main()
