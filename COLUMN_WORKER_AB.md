@@ -1,35 +1,67 @@
 # Column — Worker görevi: Adım A ve Adım B
 
-task_id: COLUMN-AB-IMPLEMENTATION-1.3  
-release_id: COLUMN-OOP-1.3-20261022  
-constitution_version: 1.3.0  
-constitution_path: docs/architecture/COLUMN_CONSTITUTION.md  
-constitution_sha256: 38b63b66896e273112e1a075b3acb8d2727475760512b8532299bebab5993c00  
-canonical_path: docs/tasks/COLUMN_WORKER_AB.md  
+> **GÖREVDEN ÖNCE OKU:** Bu üç belgenin tamamı okunmadan işe başlanmaz. İlk doğrulama `COLUMN_WORKER_AB.md` §1 içindedir. Anayasa veya görev özeti, tam okumanın yerine geçmez.
+
+task_id: COLUMN-AB-IMPLEMENTATION-1.3.1  
+release_id: COLUMN-OOP-1.3.1-20261022  
+constitution_version: 1.3.1  
+constitution_path: COLUMN_CONSTITUTION.md  
+constitution_sha256: 9865cae76655226b36e90d69ecd93836e97e1c8dd5d92acf59ef63e0da0ac519  
+canonical_path: COLUMN_WORKER_AB.md  
 role: IMPLEMENTER  
 status: READY_FOR_SUPERVISED_EXECUTION / NOT_EXECUTED
 
 ## 1. Bağlayıcı başlangıç talimatı
 
-`feridunfc/Column` üzerinde tek uygulayıcı Worker’sın. Önce kök `AGENTS.md`, sonra anayasanın **tamamı**, sonra bu görev okunacak. Anayasa okunmadan plan, kod değişikliği, yeni test beklentisi veya tasarım kararı üretilmeyecek. İlk salt okunur repo tespiti ve başlangıç kaydı hazırlamak serbesttir.
+`feridunfc/Column` üzerinde tek uygulayıcı Worker’sın. Önce kökteki `COLUMN_CONSTITUTION.md`, bu görev ve `COLUMN_SUPERVISOR.md` **tam okunacak**. Üç belgeli başlangıç ağacında AGENTS, paket, araç, test veya CI henüz yoktur. İlk salt okunur repo tespiti ve başlangıç kaydı hazırlamak serbesttir; tam okuma/doğrulama bitmeden uygulama koduna başlanmaz.
 
-Anayasa C-01…C-32 bağlayıcıdır. Bu görev anayasaya istisna getirmez. Özet, eski sprint promptu, mevcut kod veya “daha iyi olur” gerekçesiyle karar değiştirme. Çelişki varsa ilgili işi durdur ve tam maddeyle bildir. Kullanıcının açık yeni kararı varsa C-02 sürüm güncellemesini iste; eski hash’i geçersizken çalışmayı sürdürme. Routine uygulama ayrıntılarını anayasa içinde kendin çöz; kullanıcıdan her dosya için onay isteme.
+Anayasa C-01…C-32 bağlayıcıdır. Bu görev anayasaya istisna getirmez. Çelişki varsa ilgili işi durdur ve tam maddeyle bildir. Kullanıcının açık yeni kararı C-02 sürüm güncellemesine dönüşür. Rutin uygulama ayrıntılarını anayasa içinde kendin çöz; kullanıcıdan her dosya için onay isteme.
 
-Göreve başlamadan:
+Başlangıçta `git status --short --branch`, `git rev-parse HEAD` ve `git rev-parse 'HEAD^{tree}'` çalıştır. Kullanıcı değişikliklerini silme; reset/clean yapma. İlk ağaç yalnız üç tracked kök belgedir. Test komutu henüz yoksa bu durumu NOT_YET_BOOTSTRAPPED diye kaydet; başarısız veya geçmiş gibi gösterme.
 
-```bash
-git status --short
-git rev-parse HEAD
-git rev-parse HEAD^{tree}
-python tools/check_architecture_contract.py
-python -m unittest discover -s tests -v
+Tam okumanın ardından aşağıdaki Python programını repository kökünde çalıştır. PowerShell’de `@'` ve `'@ | python -` arasına; Bash’te `python - <<'PY'` ve `PY` arasına konabilir. Yalnız CRLF -> LF normalizasyonu uygulanır; bu, Windows checkout’un bir içerik sapması gibi görünmesini önler.
+
+```python
+from pathlib import Path
+import hashlib
+import re
+
+names = ('COLUMN_CONSTITUTION.md', 'COLUMN_WORKER_AB.md', 'COLUMN_SUPERVISOR.md')
+raw = {name: Path(name).read_bytes().replace(b'\r\n', b'\n') for name in names}
+for name, content in raw.items():
+    if content.startswith(b'\xef\xbb\xbf'):
+        raise SystemExit(f'{name}: UTF-8 BOM is not allowed')
+text = {name: content.decode('utf-8') for name, content in raw.items()}
+digest = {name: hashlib.sha256(content).hexdigest() for name, content in raw.items()}
+def field(name, key):
+    found = re.findall(r'^' + re.escape(key) + r':[ \t]*([^\r\n]+)', text[name], re.M)
+    if len(found) != 1:
+        raise SystemExit(f'{name}: missing or duplicate {key}')
+    return found[0].strip()
+for name in names:
+    if field(name, 'constitution_version') != '1.3.1':
+        raise SystemExit(f'{name}: constitution version mismatch')
+    if field(name, 'release_id') != 'COLUMN-OOP-1.3.1-20261022':
+        raise SystemExit(f'{name}: release mismatch')
+for name in names[1:]:
+    if field(name, 'constitution_sha256') != digest[names[0]]:
+        raise SystemExit(f'{name}: constitution hash mismatch')
+if field(names[2], 'worker_sha256') != digest[names[1]]:
+    raise SystemExit('Supervisor: Worker hash mismatch')
+for name in names:
+    print(name, digest[name])
+print('BOOTSTRAP_DOCUMENTS_OK; full reading and Supervisor G0 remain required')
 ```
 
-`HEAD^{tree}` komutunu kullanılan shell gerektiriyorsa tek tırnakla geçir. Çalışma ağacındaki önceki değişiklikleri silme, `reset/clean` yapma. Hash kapısı başarısızsa çalışmayı durdur. Başlangıç testindeki mevcut başarısızlıkları kaydet; sessizce baseline sayma veya ilgisiz işlere yayılma. Supervisor kapsam ve etkisini değerlendirir.
+Bu program hash ilişkisini denetler; okuma/anlama veya mühendislik onayı değildir. Okuma/başlangıç kaydında rol, task, release, branch/HEAD/tree, üç hash, full-reading beyanı, A0/A/B kapsamı ve iç birimler/public sonuç/kanıt/kernel sınırı/ertelenmiş kapsam için kendi cümlelerinle beş kısa açıklama bulunur. İlk kayıt Supervisor’a iletilir; dosyaya yazılacaksa repo dışındaki geçici çalışma alanı kullanılır. G0 sonrasında proje çıktı politikası belirlenebilir.
 
-Okuma/başlangıç kaydını `local_out/column_ab/bootstrap.json` içinde üret; projedeki mevcut çıktı politikası farklıysa onu koru. Alanlar: `role`, `task_id`, `release_id`, `branch`, `base_head`, `base_tree`, `constitution_version`, `constitution_sha256`, `task_sha256`, `read_complete`, `scope`, `baseline_tests`. Ayrıca iç birimler, public sonuç sınırı, kanıt kabulü, kernel erişimi ve ertelenmiş kapsam için kendi cümlelerinle beş kısa kural yaz. `read_complete=true` ancak tam okuma sonrasında yazılır; hash hesabı okumak yerine geçmez.
+Supervisor’a tek teslimde başlangıç kaydı, A0/A/B dosya planı ve kabul/tolerans stratejisini ilet. **G0 kabulünden önce uygulama koduna başlama.** Supervisor oturumu yoksa G0 beklediğini açık bildir; onay uydurma.
 
-Supervisor’a tek mesajda başlangıç kaydı, aşağıdaki izinli dosya planı, kabul matrisi ve baseline sonucunu ilet. **G0 kabulünden önce uygulama koduna başlama.** Bu belge kendi kendine Supervisor kabulü üretme yetkisi vermez. Supervisor oturumu yoksa G0 beklediğini açık bildir; onay uydurma.
+### İlk teslim: A0 kurulumu
+
+G0 sonrasında kök `AGENTS.md` oluştur; anayasayı tam okuma ve ilgili görevi doğrulama şartını otomatik agent girişine taşı. Üç belgeyi taşımadan, güncellemeden ve hash’lerini değiştirmeden `tools/check_architecture_contract.py`, onu çağıran küçük unittest ve uygun offline CI ekle. Denetim, başlangıçta kaydedilen üç hash’i ve sürüm/ref ilişkilerini kontrol etsin; eksik/değişmiş belge ve okuma girişinin kaldırılması için negatif kontroller içersin.
+
+Python >=3.12 paket/test iskeletini kur. Yalnız gerekli saf kernel ve bağımsız oracle kaynaklarını legacy dalındaki sabit commit’ten al; aşağıdaki kaynak/sınır kuralları geçerlidir. Eski uygulamanın tamamını main’e geri taşıma. A0 sonrasında `python tools/check_architecture_contract.py` ve `python -m unittest discover -s tests -v` başlangıç/kapanış komutları olur. G1, A0 ile A sözleşmelerini birlikte kabul eder.
 
 ## 2. Amaç ve kesin kapsam
 
@@ -61,9 +93,9 @@ Bu görevde kolon tasarımı, aday araması, kat/birleşim hesabı, canlı ETABS
 | `tests/test_column_contracts.py`, `tests/test_section_pilot.py` | Anayasa ve sayısal kabul senaryoları |
 | `examples/section_pilot.py` | Aynı public API’yi kullanan iki düzenli çalıştırılabilir örnek |
 
-Gerekli `__init__.py` ve küçük test yardımcıları eklenebilir. Birbiriyle çok yakın tipleri birleştirmek mümkün; public sözleşme, sorumluluk ve import sınırı korunmalıdır. Plan dışı dosya değişikliği gerekirse nedenini önce Supervisor’a bildir. Paketleme düzenini ve Python >=3.12 tabanını koru; gereksiz yeni bağımlılık ekleme.
+A0 kapsamında kök `AGENTS.md`, `pyproject.toml`, gerekli `.gitignore`/LF politikası, `tools/check_architecture_contract.py`, `tests/test_architecture_contract.py` ve küçük `.github/workflows/offline-tests.yml` eklenebilir. Bu, mevcut üç belgeli başlangıçtan sonraki ilk uygulama teslimidir. Gerekli `__init__.py` ve küçük test yardımcıları eklenebilir. Birbiriyle çok yakın tipleri birleştirmek mümkün; public sözleşme, sorumluluk ve import sınırı korunmalıdır. Plan dışı dosya değişikliği gerekirse nedenini önce Supervisor’a bildir. Python >=3.12 tabanını kullan; gereksiz yeni bağımlılık ekleme. Legacy’deki paketleme/API düzenini bütün ürünü geri taşıma zorunluluğu sayma.
 
-Korunanlar: kök `AGENTS.md`, üç kanonik belge, `tools/check_architecture_contract.py` ve `tests/test_architecture_contract.py` kilitleri; mevcut kernel/test/API davranışı ve tarihsel kanıtlar. Worker, koruma testini silerek, skip ederek, digest’i yenileyerek veya beklenen değeri değiştirerek kendi sapmasını geçiremez. Kernel hatası bulunursa C-30’a göre ayrı kanıtlı düzeltme önerisi hazırlanır; doğrudan formül değiştirilmez.
+Korunanlar: üç kanonik belge; A0 sonrasında kök AGENTS ve oluşturulan hash denetimi/test kilitleri; legacy dalındaki eski kod/test/API/kanıt ağacı. Yeni main’de bütün eski testler yoktur; seçilerek alınan matematiğin davranışı bağımsız test ve kaynak referansıyla korunur. Worker, koruma testini silerek, skip ederek, digest’i yenileyerek veya beklenen değeri değiştirerek kendi sapmasını geçiremez. Kernel hatası bulunursa C-30’a göre ayrı kanıtlı düzeltme önerisi hazırlanır; doğrudan formül değiştirilmez.
 
 ## 4. Adım A — uygulanacak sözleşmeler
 
@@ -73,7 +105,7 @@ Korunanlar: kök `AGENTS.md`, üç kanonik belge, `tools/check_architecture_cont
 4. **C-12…C-15:** Üretici/edinim/amaç/tepki anlamı ayrımı; role/yönteme/tüketiciye/revizyona bağlı qualification. Kabul kapısı gerçek referans çözümlemesiyle en az geçerli kanıt, çözülemeyen kanıt ve yanlış kapsam/revizyon örneklerini ayırır. Dolu metin kontrolü tek başına yeterli değildir. Tam analiz import motoru yazılmaz.
 5. **C-15/C-24:** `Provided`, `NotRequired`, `Missing`, `Unsupported`, `Unresolved`; eksikliği uygunsuzlukla karıştırmayan sonuç başlıkları. A/B’de uygulanmayan kontrol başlıkları kapsam dışı kalır; PASS olmaz.
 
-A’nın değişmezlik/import sınırlarını ve anlamlı negatif durumlarını birlikte teslim et. Sadece constructor testi yazıp geçme. **G1: Supervisor A sözleşmelerini kabul etmeden B uygulamasına geçme.**
+A0’ın okuma/hash/test/CI kurulumunu ve A’nın değişmezlik/import sınırları ile anlamlı negatif durumlarını birlikte teslim et. Sadece constructor testi yazıp geçme. **G1: Supervisor A sözleşmelerini kabul etmeden B uygulamasına geçme.**
 
 ## 5. Adım B — kesit akışı
 
@@ -93,7 +125,7 @@ Kısmi çözüm verisi korunur; tam zarf olmadığı açıktır. Sıfır yön, k
 
 ### Mevcut kernel ile bağ
 
-İncelenen kaynak `Column@fc303e85b19c490a3dbbfbeb0bf67bd86c8d41ed` içindeki `physics/section_capacity.py` dosyasıdır. Gerçek checkout imzalarını yeniden doğrula. `evaluate_rectangular_column_capacity_state`, `solve_capacity_state_for_axial_force`, zarf ve radyal kapasite fonksiyonları dar adapter arkasındadır. `rebar_layout.py` içindeki yönetmelik filtreli aday üreticisi bu göreve alınmaz.
+İncelenen matematik kaynağı `Column@fc303e85b19c490a3dbbfbeb0bf67bd86c8d41ed` içindeki `tbdy_column_core/physics/section_capacity.py` dosyasıdır. Tam eski ağaç `legacy/column-pre-clean-20261022` dalında `873e48e6ebc9c1c345d10d7d1962d7ee7af49a91` commit’inde korunmuştur. Kaynağı salt okunur al; yalnız seçilen kernel ve gerçek bağımlılıklarını yeni pakete taşı, blob/davranış izini kaydet. Gerçek checkout imzalarını yeniden doğrula. `evaluate_rectangular_column_capacity_state`, `solve_capacity_state_for_axial_force`, zarf ve radyal kapasite fonksiyonları dar adapter arkasındadır. `rebar_layout.py` içindeki yönetmelik filtreli aday üreticisi bu göreve alınmaz.
 
 `max_iterations` için zarf yardımcı fonksiyonunun bunu kabul ettiğini varsayma. Gerekirse açı örneklerini üretip mevcut tek açı çözücüsünü çağır; matematiği kopyalama. Her gerçek N kalanı ilan edilen politikayla denetlenir. İlk kökün bulunması bütün köklerin çözüldüğünü göstermez. Kernel’in döndürmediği iterasyon/kök sayısını rapora yazma. Belirsizliği yapısal kapasite dışı hükmüne çevirmeme kuralı C-20’de bağlayıcıdır.
 
@@ -116,7 +148,7 @@ Bu değerler sayısal referans girdileridir; otomatik normatif kabul değildir:
 | Paspayı/etriye | 3 cm temiz paspayı; 1 cm etriye çapı |
 | Gerinim durumları | (0°, c=20 cm), (33°, c=24 cm), (90°, c=20 cm) |
 
-Oracle üretim solver/adapter’ını çağırmaz. Mevcut `tests/independent/oracle.py` doğrudan durum, ayrı kök denetimi ve sık açılı radyal referans için kullanılır. Bu karşılaştırma aynı malzeme idealizasyonu altında sayısal denetimdir. `tests/test_ts500_numerical_oracles.py` varlığı yeni kesit pilotunun bütün kabulünü kendiliğinden sağlamaz.
+Oracle üretim solver/adapter’ını çağırmaz. Legacy’deki `tests/independent/oracle.py`, yalnız test bağımlılığı olarak kaynak referansı korunarak alınır; doğrudan durum, ayrı kök denetimi ve sık açılı radyal referans için kullanılır. Bu karşılaştırma aynı malzeme idealizasyonu altında sayısal denetimdir. `tests/test_ts500_numerical_oracles.py` varlığı yeni kesit pilotunun bütün kabulünü kendiliğinden sağlamaz.
 
 | Test ID | Zorunlu davranış | Anayasa |
 |---|---|---|
@@ -137,7 +169,7 @@ Oracle üretim solver/adapter’ını çağırmaz. Mevcut `tests/independent/ora
 | AB-15 | Aynı nesneden JSON/HTML; strict JSON ve aynı revizyon/değerler | C-28 |
 | AB-16 | Gerçek public facade, iki farklı düzen ve ikinci bir geçerli kesit girdisiyle hardcode olmadan çalışır | C-05, C-31 |
 | AB-17 | Import sınırı ve değişmezlik; üretimde oracle/import veya gizli dış erişim yok | C-04, C-06, C-07 |
-| AB-18 | Mevcut regresyonlarda yeni başarısızlık yok; belge hash kapısı korunmuş | C-30, C-32 |
+| AB-18 | Alınan matematiğin bağımsız regresyonları geçer; legacy ağacı korunur; A0 okuma/hash/test/CI kapısı işler | C-30, C-32 |
 
 Tolerans değerlerini test sonuçlarını gördükten sonra keyfî büyütme. Birim/doğrudan durum, kök dengesi ve açısal ayrıklaştırma için ayrı bütçe tanımla; seçimini yöntem ve yakınsama kanıtıyla gerekçelendir. Toleransın seçim kaydı G0 planında yer alır; gerekçeli düzeltme Supervisor’a bildirilir ve anayasadaki kabul sınırını değiştiremez.
 
@@ -157,7 +189,7 @@ Uyum defterinde C-01…C-32 için tam birer satır bulunacak: madde, A/B zorunlu
 | C-27 | Native yasağına uy; native motor ertelenir. |
 | C-28…C-32 | Aynı rapor, bağımsız kabul, regresyon ve Supervisor kapıları uygulanır. |
 
-Commit’ler küçük ve incelenebilir olsun. G1 ve son G2 teslimleri belirli commit HEAD/tree’ye bağlıdır; testlerin ardından kod değişirse etkilenen doğrulamalar yenilenir. Supervisor onayı eski commit’ten yenisine taşınmaz.
+Commit’ler küçük ve incelenebilir olsun. A0 dahil G1 ve son G2 teslimleri belirli commit HEAD/tree’ye bağlıdır; testlerin ardından kod değişirse etkilenen doğrulamalar yenilenir. Supervisor onayı eski commit’ten yenisine taşınmaz.
 
 Son teslimde başlangıç kaydı, değişen dosyalar, AB-01…AB-18 sonuçları, C-01…C-32 uyum defteri, gerçek test komutları/çıkışları, iki düzenin JSON/HTML örnekleri ve açık destek sınırlarını ver. `python -m examples.section_pilot` ile örnekler üretilebilir olmalı. Test çıktısı üretim hesabının kendisi gibi sunulmaz.
 

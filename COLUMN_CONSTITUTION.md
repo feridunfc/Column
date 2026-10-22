@@ -1,20 +1,24 @@
 # Column Mimari Anayasası
 
+> **GÖREVDEN ÖNCE OKU:** Bu üç belgenin tamamı okunmadan işe başlanmaz. İlk doğrulama `COLUMN_WORKER_AB.md` §1 içindedir. Anayasa veya görev özeti, tam okumanın yerine geçmez.
+
 constitution_id: COLUMN-OOP-CONSTITUTION  
-constitution_version: 1.3.0  
-release_id: COLUMN-OOP-1.3-20261022  
+constitution_version: 1.3.1  
+release_id: COLUMN-OOP-1.3.1-20261022  
 date: 2026-10-22  
-canonical_path: docs/architecture/COLUMN_CONSTITUTION.md  
+canonical_path: COLUMN_CONSTITUTION.md  
 repository: feridunfc/Column  
 status: BINDING_DESIGN / IMPLEMENTATION_NOT_YET_ACCEPTED
 
-Bu belge, önceki v1.1 mimari tasarımını ve v1.2 değerlendirmelerini tek bağlayıcı metinde birleştirir. Önceki belgeler tarihsel gerekçe olarak kalır; alternatif bir uygulama otoritesi değildir. Bu sürümde iç birimler N–mm–Nmm–MPa olarak kesinleştirilmiş, A/B kesit pilotu ilk uygulama olarak seçilmiş, Worker/Supervisor uyum kapıları eklenmiştir. Belgenin yayımlanması, mimarinin kodda tamamlandığını veya gerçek bir kolonun uygun bulunduğunu göstermez.
+Bu belge, önceki v1.1 mimari tasarımını, v1.2 değerlendirmelerini ve v1.3 kararlarını tek bağlayıcı metinde birleştirir. Kullanıcının 22 Ekim 2026 tarihli kararıyla main yalnız bu üç kök belgeden başlar; eski repository ağacı `legacy/column-pre-clean-20261022` dalında, `873e48e6ebc9c1c345d10d7d1962d7ee7af49a91` commit’inde korunur. Önceki belgeler tarihsel gerekçe olarak kalır; alternatif bir uygulama otoritesi değildir. Bu sürümde iç birimler N–mm–Nmm–MPa olarak kesinleştirilmiş, A/B kesit pilotu ilk uygulama olarak seçilmiş, Worker/Supervisor uyum kapıları eklenmiştir. Belgenin yayımlanması, mimarinin kodda tamamlandığını veya gerçek bir kolonun uygun bulunduğunu göstermez.
 
 ## 1. Yetki, kapsam ve uyumun anlamı
 
 ### C-01 — Tek bağlayıcı mimari
 
-Worker ve Supervisor, işe başlamadan bu dosyanın **tamamını**, kök `AGENTS.md` dosyasını ve kendi görev belgesini okumak zorundadır. Başlık veya özet okumak yeterli değildir. Kanonik görev belgeleri `docs/tasks/COLUMN_WORKER_AB.md` ve `docs/tasks/COLUMN_SUPERVISOR.md` dosyalarıdır. Görevdeki sürüm ve SHA-256, bu dosyanın ham UTF-8/LF baytlarıyla eşleşmelidir. Eşleşmiyorsa uygulamaya başlanmaz.
+Worker ve Supervisor, işe başlamadan kökteki **üç belgenin tamamını** okumak zorundadır: `COLUMN_CONSTITUTION.md`, `COLUMN_WORKER_AB.md`, `COLUMN_SUPERVISOR.md`. Başlık veya özet okumak yeterli değildir. Görevlerdeki sürüm ve SHA-256 bağlantıları doğrulanır; uyuşmazlık varsa uygulamaya başlanmaz. Hash sözleşmesi UTF-8/BOM’suz içeriktir; Windows checkout için yalnız CRLF -> LF dönüşümü yapılır, başka boşluk veya içerik normalizasyonu yapılmaz.
+
+İlk main ağacında yalnız bu üç belge vardır. `AGENTS.md`, araç, paket, test veya CI henüz yoktur. İlk okuma ve doğrulama Worker §1’deki bağımsız Python komutuyla yapılır. G0 sonrasında Worker’ın ilk A0 teslimi, bu okuma şartını kök `AGENTS.md` dosyasına ve sürüm/hash denetimini araç/test/CI’a taşır. Bunlar oluşunca sonraki görevler `AGENTS.md` dosyasını da okur. Legacy dalındaki AGENTS ve görevler güncel talimat değildir.
 
 Platform talimatları ve açık kullanıcı talimatları geçerlidir. Kullanıcı mimariyi değiştirdiğinde bu karar görünür bir sürüm güncellemesine dönüştürülür; eski anayasa geçerliymiş gibi çalışmaya devam edilmez. Eski sprint promptları, sohbet alıntıları, örnekler, diyagramlar ve kodun mevcut davranışı bu anayasayı sessizce değiştiremez. Alt dizin talimatları anayasaya istisna yaratamaz; çelişki kaydedilir ve ilgili iş durdurulur.
 
@@ -26,7 +30,7 @@ Worker ve Supervisor anayasa değişikliği, gizli istisna, tolerans gevşetmesi
 
 ### C-03 — Etkin uygulama sınırı
 
-Şimdiki uygulama yalnız **Adım A: temel sözleşmeler** ve **Adım B: verilmiş donatıyla `calculate_section`** akışıdır. `check_column`, `design_column`, aday araması, kat/birleşim hesap motoru, canlı ETABS, yeni veritabanı altyapısı ve bina nüfusu çalıştırması bu görevin dışındadır. Bunların aşağıdaki hedef sözleşmeleri korunur; boş kabuk sınıflarla uygulanmış gibi gösterilmez.
+Şimdiki uygulama yalnız **Adım A0: asgari repository/Python/okuma ve hash denetimi kurulumu**, **Adım A: temel sözleşmeler** ve **Adım B: verilmiş donatıyla `calculate_section`** akışıdır. A0; kök AGENTS, paket/test altyapısı, belge denetimi ve bunu çalıştıran küçük CI işini kapsar; bütün eski ürünü geri getirme izni değildir. `check_column`, `design_column`, aday araması, kat/birleşim hesap motoru, canlı ETABS, yeni veritabanı altyapısı ve bina nüfusu çalıştırması bu görevin dışındadır. Bunların aşağıdaki hedef sözleşmeleri korunur; boş kabuk sınıflarla uygulanmış gibi gösterilmez.
 
 ## 2. Ürün ve katmanlar
 
@@ -41,7 +45,7 @@ Uygulama `feridunfc/Column` içinde modüler bir Python ürünü olarak gelişir
 | `tbdy_column_core/application` | Public kullanım senaryoları ve açık portlar | Somut native/DB sınıfına gizli bağ |
 | `tbdy_column_core/adapters` | Kaynak ve depolama uyarlamaları | Alternatif mühendislik hesabı |
 | `tbdy_column_core/reporting` | Aynı değişmez sonuçtan sunum | Karar/formül üretimi |
-| `tbdy_column_core/physics` | Mevcut saf sayısal çekirdekler | Kaynak otoritesi veya proje durumu |
+| `tbdy_column_core/physics` | Legacy’den seçilip doğrulanarak alınan saf çekirdekler | Kaynak otoritesi veya proje durumu |
 
 `engineering/section_adapter.py`, yeni kesit yolunda `physics/section_capacity.py` erişiminin tek sınırıdır. Test oracle’ı üretim bağımlılığı olamaz. Composition root, dış bağımlılıkları açıkça bağlar.
 
@@ -290,13 +294,13 @@ JSON ve okunabilir HTML rapor **aynı `SectionCapacityResult`** nesnesinden üre
 
 ### C-29 — Bağımsız sayısal kabul
 
-Üretim çıktısı beklenen değer olarak kopyalanmaz. `tests/independent/oracle.py` doğrudan durumlar için bağımsız strip integrasyonu, hedef N için ayrı kök denetimi ve sık açılı radyal referans sağlar. Aynı malzeme idealizasyonu ve bazı zarf varsayımları paylaşılır; bu karşılaştırma sayısal uygulama denetimidir, bağımsız yönetmelik/model onayı değildir.
+Üretim çıktısı beklenen değer olarak kopyalanmaz. Legacy dalındaki `tests/independent/oracle.py`, A0/B sırasında test bağımlılığı olarak seçilip kaynak referansı korunarak alınır; doğrudan durumlar için bağımsız strip integrasyonu, hedef N için ayrı kök denetimi ve sık açılı radyal referans sağlar. Aynı malzeme idealizasyonu ve bazı zarf varsayımları paylaşılır; bu karşılaştırma sayısal uygulama denetimidir, bağımsız yönetmelik/model onayı değildir.
 
 Asimetrik kesit, iki gerçek donatı düzeni, dönüşüm ve negatif kabul durumları zorunludur. Çubukların sırasını değiştirmek fiziği değiştirmez. Her farklı düzenin her koşulda kapasiteyi değiştirmesi şart koşulmaz; seçilmiş referanslardaki fark bağımsız hesapla karşılaştırılır. Doğrudan durum toleransı, eksenel denge toleransı ve açı yakınsama hatası ayrı ölçülür. Çoklu kök/eksik zarf/karma çelik gibi destek sınırları sınanır. Test sayısı ürün tamamlanması değildir.
 
 ### C-30 — Geçiş ve geçmişin korunması
 
-Mevcut testler, kullanıcı çalışma ağacı ve eski API korunur. Tarihsel adlar yeni public API’ye taşınmaz; eski kanıt/kod geçmişi silinmez. `rebar_layout.py` içindeki saf geometri ile yönetmelik filtreli aday üretimi aynı şey sayılmaz. A/B aday üreticisini içeri almaz. Formüller genel yeniden yazıma tabi tutulmaz; kanıtlı hata ayrı görünür düzeltme ve bağımsız regresyon gerektirir. Test beklentisi değiştirilerek hata saklanamaz.
+Legacy dalında eski kod, API, fixture, test ve kanıtlar özgün ağaç olarak korunur; kullanıcı çalışma ağacı silinmez. Yeni main’de eski API/test paketinin tamamını bulundurmak zorunlu değildir. A0/B yalnız ihtiyaç duyduğu kernel, bağımsız oracle ve yardımcıları kaynaklarıyla seçerek alır; bütün eski orkestrasyon, test ağı veya workflow geri getirilmez. Alınan matematiğin eski davranışı ayrı referans/bağımsız testlerle korunur. Tarihsel adlar yeni public API’ye taşınmaz; eski kanıt/kod geçmişi silinmez. `rebar_layout.py` içindeki saf geometri ile yönetmelik filtreli aday üretimi aynı şey sayılmaz. A/B aday üreticisini içeri almaz. Formüller genel yeniden yazıma tabi tutulmaz; kanıtlı hata ayrı görünür düzeltme ve bağımsız regresyon gerektirir. Test beklentisi değiştirilerek hata saklanamaz.
 
 Drive `example_calcs` dosyaları gereksinim/referans kaynağıdır: donatı seçimi, kesme/sargı ve kat hesabının farklı sahiplikleri vardır. Aynı spreadsheet formülünü iki tarafa kopyalamak bağımsız oracle değildir. Referans fixture gerçek B-BLOK/235 veya canlı proje kanıtı gibi etiketlenmez.
 
@@ -304,7 +308,7 @@ Drive `example_calcs` dosyaları gereksinim/referans kaynağıdır: donatı seç
 
 | Adım | Bitiş ölçütü | Şimdiki görev |
 |---|---|---|
-| A | Birim/eksen/kimlik, bilgi durumu, rol/kanıt sözleşmeleri; anlamlı kabul/ret örnekleri | Zorunlu |
+| A0 + A | Asgari repo/Python/okuma ve hash kapısı; birim/eksen/kimlik, bilgi durumu, rol/kanıt sözleşmeleri | Zorunlu |
 | B | `calculate_section` public yolundan bağımsız doğrulanmış sonuç ve aynı JSON/HTML | Zorunlu |
 | C | Verilmiş tam cage ile `check_column`, üye mekaniği ve talep üretimi | Ertelenmiş |
 | D | Aynı adayda kesme, sargı ve kapsam içi detaylandırma | Ertelenmiş |
@@ -323,7 +327,7 @@ Başlangıç kaydı; rol, task, branch/HEAD, anayasa sürümü/hash’i, görev 
 
 Her C-01…C-32 maddesi için uyum defteri tutulur: `SATISFIED`, `PRESERVED_DEFERRED`, `VIOLATION` veya `UNVERIFIED`. A/B’de ertelenmesine izin verilen madde parçaları açık gerekçeyle korunur; zorunlu parça bu etiketle atlanamaz. `VIOLATION` veya zorunlu `UNVERIFIED` varken A/B kabul edilmez. Bulgular madde, dosya/sembol, kanıt ve düzeltme ölçütü taşır. Tek açık görev kuyruğu vardır; aynı kapalı iş sebepsiz yeniden açılmaz.
 
-Başlangıç ve her kapanışta `python tools/check_architecture_contract.py` çalıştırılır. Bu denetim anayasa/Worker/Supervisor bayt özetleri ve sürümlerini kontrol eder. Mevcut offline test keşfi denetimi CI’da da çalıştırır. Yeşil hash kontrolü semantik mimari uygunluğun yerine geçmez. Sabit doküman kilitlerini uygulama Worker’ı değiştiremez. Anayasa değişikliği ancak C-02 süreciyle yeni sürüm olarak yayımlanır.
+Üç belgeli ilk ağaçta başlangıç doğrulaması Worker §1’deki Python komutuyla yapılır. A0 tesliminden itibaren başlangıç ve her kapanışta `python tools/check_architecture_contract.py` çalıştırılır; bu araç aynı UTF-8/LF hash sözleşmesini uygular. A0, sürüm/hash denetimini unittest keşfine ve CI’a bağlar. Yeni main’in üç belgeli başlangıcında çalışan test/CI varmış gibi rapor verilmez; eski test/CI legacy’de korunmuştur. Yeşil hash kontrolü semantik mimari uygunluğun yerine geçmez. Worker A0’da başlangıçta doğrulanmış üç belge hash’ini kilitler; sonra bu kilitleri kendi uygulama sapmasını geçirmek için değiştiremez. Anayasa değişikliği ancak C-02 süreciyle yeni sürüm olarak yayımlanır.
 
 ## İncelenen kaynaklar ve sürüm notu
 
@@ -336,3 +340,5 @@ Kod gözlemleri `Column@fc303e85b19c490a3dbbfbeb0bf67bd86c8d41ed` kesitine bağl
 - [Drive example_calcs](https://drive.google.com/drive/folders/1cr6tfw2THbdcYWBdQp61Xr6SWaAq-THF)
 
 v1.3.0: iç birimler tekleştirildi; istasyon/tepki kimlikleri ayrıldı; kanıt nitelendirmesi kapsama bağlandı; kesit istekleri ve kernel destek sınırları kesinleştirildi; A/B ve sonraki üye pilotu çelişkisi giderildi; üç belge ve repo başlangıç/CI denetimi aynı sürüme bağlandı.
+
+v1.3.1: Kullanıcı kararıyla main yalnız üç kök belgeye indirildi; eski ağaç legacy dalına bağlandı. Kök yollar, Windows LF hash sözleşmesi ve araçsız ilk okuma/doğrulama tanımlandı. AGENTS, Python, test ve CI kurulumu ilk Worker A0 teslimine alındı. Mühendislik hesap sözleşmeleri değiştirilmedi.

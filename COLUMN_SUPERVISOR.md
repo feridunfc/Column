@@ -1,13 +1,15 @@
 # Column — Supervisor görevi
 
-task_id: COLUMN-AB-SUPERVISION-1.3  
-release_id: COLUMN-OOP-1.3-20261022  
-constitution_version: 1.3.0  
-constitution_path: docs/architecture/COLUMN_CONSTITUTION.md  
-constitution_sha256: 38b63b66896e273112e1a075b3acb8d2727475760512b8532299bebab5993c00  
-worker_path: docs/tasks/COLUMN_WORKER_AB.md  
-worker_sha256: 167caa6dd9a2a0ea1ab912cc4a034e76dca47a60f90a3ec28c596fae13cc833f  
-canonical_path: docs/tasks/COLUMN_SUPERVISOR.md  
+> **GÖREVDEN ÖNCE OKU:** Bu üç belgenin tamamı okunmadan işe başlanmaz. İlk doğrulama `COLUMN_WORKER_AB.md` §1 içindedir. Anayasa veya görev özeti, tam okumanın yerine geçmez.
+
+task_id: COLUMN-AB-SUPERVISION-1.3.1  
+release_id: COLUMN-OOP-1.3.1-20261022  
+constitution_version: 1.3.1  
+constitution_path: COLUMN_CONSTITUTION.md  
+constitution_sha256: 9865cae76655226b36e90d69ecd93836e97e1c8dd5d92acf59ef63e0da0ac519  
+worker_path: COLUMN_WORKER_AB.md  
+worker_sha256: b3210d4cdc33950f03df8ae95c320c2f0ea5d112f5960465b997154d1122d9be  
+canonical_path: COLUMN_SUPERVISOR.md  
 role: INDEPENDENT_ACCEPTANCE_OWNER  
 status: READY_FOR_SUPERVISED_EXECUTION / NOT_EXECUTED
 
@@ -15,7 +17,7 @@ status: READY_FOR_SUPERVISED_EXECUTION / NOT_EXECUTED
 
 `feridunfc/Column` A/B uygulamasının Supervisor’ısın. Tek Worker’ın teslimini, aynı anayasa ve sabit commit üzerinde bağımsız denetleyeceksin. İkinci bir mimari üretmek veya uygulamayı yeniden yazmak görevin değildir.
 
-Önce kök `AGENTS.md`, anayasanın **tamamı**, Worker görevinin tamamı ve bu belge okunacak. Sürüm/hash eşleşmesini `python tools/check_architecture_contract.py` ile doğrula. Bu adımlar tamamlanmadan görev atama, uygulama planını onaylama veya ACCEPTED kararı verme. Hash kontrolü okuma/anlama kanıtı değildir; kendi başlangıç kaydında tam okuma beyanı ve beş temel kuralın kısa açıklaması da bulunur.
+Önce kökteki anayasanın **tamamı**, Worker görevinin tamamı ve bu belge okunacak. İlk main yalnız üç belgedir; AGENTS/araç/test/CI henüz yoktur. İlk sürüm/hash eşleşmesini Worker §1’deki Python programıyla bağımsız doğrula. A0 tesliminden sonra AGENTS de okunur ve `python tools/check_architecture_contract.py` çalıştırılır. Bu adımlar tamamlanmadan görev atama, uygulama planını onaylama veya ACCEPTED kararı verme. Hash kontrolü okuma/anlama kanıtı değildir; kendi başlangıç kaydında tam okuma beyanı ve beş temel kuralın kısa açıklaması da bulunur.
 
 Başlangıç kaydın rol, task, branch/HEAD/tree, release, anayasa ve Worker hash’i, kapsam ve gözlenen repo durumunu içerir. Worker’ın beyanını kendininmiş gibi kopyalama. Eski sohbet kapanışları, test sayıları veya önceki commit’in kabulü güncel kabul yerine geçmez.
 
@@ -40,7 +42,7 @@ Mevcut görev zaten yetkilendirildiyse yeniden izin isteme. Bu belgelerin hazır
 
 ### G0 — Okuma, kaynak ve kapsam
 
-Worker’dan başlangıç kaydı, gerçek HEAD/tree, çalışma ağacı durumu, mevcut test sonucu, izinli dosya planı ve sayısal tolerans planını al. Anayasa/Worker/Supervisor sürüm ve hash’lerini kendin doğrula. Okuma beyanındaki beş kuralı C-08, C-05, C-14/C-15, C-04/C-20 ve C-03/C-31 ile karşılaştır.
+Worker’dan başlangıç kaydı, gerçek HEAD/tree, çalışma ağacı durumu, üç belge doğrulaması, A0/A/B dosya planı ve sayısal tolerans planını al. İlk ağaçta test altyapısı olmadığı için başlangıç durumu NOT_YET_BOOTSTRAPPED olabilir; eski 144-test sonucu yeni ağaçta çalıştırılmış test diye sunulamaz. Anayasa/Worker/Supervisor sürüm ve hash’lerini kendin doğrula. Okuma beyanındaki beş kuralı C-08, C-05, C-14/C-15, C-04/C-20 ve C-03/C-31 ile karşılaştır.
 
 Kaynak `fc303e85b19c490a3dbbfbeb0bf67bd86c8d41ed` sonrasında değişmişse ilgili kernel ve oracle imzalarını yeniden incele. Sadece doküman/başlangıç denetimi eklenmiş olması engineering baseline’ın değiştiği anlamına gelmez; farkı kaydet. Baseline başarısızlığının görev kapsamındaki etkisini belirle. Kullanıcı değişikliklerini silerek temiz çalışma ağacı üretme.
 
@@ -48,7 +50,7 @@ G0 kabulü için sürüm eşleşmesi, gerçek okuma kaydı, korunmuş kullanıc�
 
 ### G1 — Adım A sözleşmeleri
 
-Worker’ın A teslimini sabit commit üzerinde incele. C-01…C-15 ve ilgili katman/değişmezlik hükümlerinin gerçek uygulamasını değerlendir. Yalnız constructor veya enum sayısına bakma:
+Worker’ın A0 + A teslimini sabit commit üzerinde incele. Önce kök AGENTS’in tam okumayı zorunlu kıldığını, hash denetiminin sürüm/ref/üç sabit içerik ilişkisini ve Windows LF sözleşmesini uyguladığını, eksik/değişmiş belgeleri reddettiğini ve unittest/CI bağlantısının gerçekten çalıştığını doğrula. Python/paket iskeleti ile legacy’den alınan seçilmiş kernel/oracle kaynak izini kontrol et. Bütün eski uygulamanın main’e geri getirilmesi kabul edilmez. C-01…C-15 ve ilgili katman/değişmezlik hükümlerinin gerçek uygulamasını değerlendir. Yalnız constructor veya enum sayısına bakma:
 
 - Miktarların yanlış boyut işlemleri ve aritmetik taşma reddi gerçekten çalışıyor mu?
 - Toleranslar doğru boyutta mı; `bool`, NaN/Inf ve yanlış alan türü reddediliyor mu?
@@ -122,7 +124,7 @@ Kapı sonucu `ACCEPTED`, `CHANGES_REQUIRED` veya `BLOCKED` olur; A/B nihai kabul
 - G0 ve G1 kabul edilmiş, G2 kanıtları son HEAD’e bağlı olmalı.
 - AB-01…AB-18’in zorunlu davranışları karşılanmalı.
 - C-01…C-32’de açık VIOLATION veya zorunlu UNVERIFIED kalmamalı.
-- Mevcut regresyonlara yeni başarısızlık eklenmemeli; başlangıç engellerinin etkisi açık olmalı.
+- Yeni A0/A/B testleri ve alınan kernel’in bağımsız regresyonları geçmeli; legacy ağacı korunmalı ve kapsamlı eski ürün kabulü iddia edilmemeli.
 - Korunan dosyalar/kilitler izinsiz değişmemiş olmalı.
 - Aynı public akış ve aynı sonuçtan JSON/HTML gerçekten çalışmalı.
 - Gelecek üye/bina kapsamı tamamlanmış gibi sunulmamalı.
