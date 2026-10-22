@@ -84,4 +84,6 @@ def not_required_is_supported(
                 r.evidence == outcome.applicability_evidence and
                 r.role == "APPLICABILITY:" + outcome.requirement_id and
                 r.method_id == method_id and r.consumer_id == consumer_id and
-                r.input_revision_id == input_revision_id]) == 1
+                r.input_revision_id == input_revision_id and
+                r.evidence.input_revision.revision == input_revision_id and
+                r.applicability_rule == outcome.rule]) == 1

@@ -186,13 +186,53 @@ class EvidenceAndOutcomes(unittest.TestCase):
              v,EvidenceCatalog(),method_id="METHOD",consumer_id="STORY",
              input_revision_id="M1"))
         proof=replace(self.scope,role="APPLICABILITY:STABILITY",
-             method_id="METHOD",consumer_id="STORY")
+             method_id="METHOD",consumer_id="STORY",applicability_rule=v.rule)
         self.assertTrue(not_required_is_supported(
              v,EvidenceCatalog((proof,)),method_id="METHOD",
              consumer_id="STORY",input_revision_id="M1"))
         self.assertFalse(not_required_is_supported(
              v,EvidenceCatalog((proof,)),method_id="METHOD",
              consumer_id="OTHER",input_revision_id="M1"))
+
+    def test_evidence_revision_and_producer_binding_fail_closed(self):
+        b=AnalysisBundle((RoleBinding("DESIGN_FORCES",self.run),))
+        incompatible=replace(self.scope,evidence=EvidenceRef("OTHER",
+                 self.scope.evidence.source,RevisionRef("column","P","M2")))
+        with self.assertRaises(ValueError):
+            EvidenceCatalog((incompatible,))
+        wrong_producer=replace(
+             self.scope,evidence=EvidenceRef("FOREIGN",
+                 replace(self.scope.evidence.source,producer="OTHER"),
+                 self.scope.evidence.input_revision))
+        decision=b.qualify((self.need,),EvidenceCatalog((wrong_producer,)))
+        self.assertFalse(decision.contract_ready)
+        self.assertIn("DESIGN_FORCES:EVIDENCE_UNRESOLVED_OR_AMBIGUOUS",decision.issues)
+
+    def test_notrequired_wrong_rule_and_revision_not_accepted(self):
+        v=NotRequired("STABILITY",RuleRef("TS500","2000","7.6"),
+                      "method inapplicable",evidence())
+        wrong_rule=replace(self.scope,role="APPLICABILITY:STABILITY",
+                     method_id="METHOD",consumer_id="STORY",
+                     applicability_rule=RuleRef("OTHER","2000","7.6"))
+        self.assertFalse(not_required_is_supported(
+                     v,EvidenceCatalog((wrong_rule,)),
+                     method_id="METHOD",consumer_id="STORY",input_revision_id="M1"))
+        right_rule=replace(wrong_rule,applicability_rule=v.rule)
+        self.assertTrue(not_required_is_supported(
+                     v,EvidenceCatalog((right_rule,)),
+                     method_id="METHOD",consumer_id="STORY",input_revision_id="M1"))
+        self.assertFalse(not_required_is_supported(
+                     v,EvidenceCatalog((right_rule,)),
+                     method_id="METHOD",consumer_id="STORY",input_revision_id="M2"))
+
+    def test_catalog_malformed_and_duplicate_role_rejected(self):
+        with self.assertRaises(TypeError):
+            EvidenceCatalog([self.scope])
+        with self.assertRaises(ValueError):
+            EvidenceCatalog((self.scope,self.scope))
+        b=AnalysisBundle((RoleBinding("DESIGN_FORCES",self.run),))
+        with self.assertRaises(ValueError):
+            b.qualify((self.need,self.need),EvidenceCatalog((self.scope,)))
 
     def test_coverage_incomplete_known_fail_still_visible(self):
         c=CoverageLedger(("CASE1","CASE2"),("CASE1",))

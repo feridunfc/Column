@@ -7,7 +7,7 @@ native ETABS analysis validity. No global is_qualified shortcut.
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
-from .identity import EvidenceRef, required
+from .identity import EvidenceRef, RuleRef, required
 
 
 class ResponseSemantics(StrEnum):
@@ -82,6 +82,7 @@ class VerifiedScope:
     result_generation_id: str
     population_keys: tuple[str,...]
     verification_receipt_ref: str
+    applicability_rule: RuleRef | None = None
 
     def __post_init__(self):
         if type(self.evidence) is not EvidenceRef:
@@ -90,6 +91,10 @@ class VerifiedScope:
                      "run_id","model_revision_id","result_generation_id",
                      "verification_receipt_ref"):
             required(getattr(self,name),name)
+        if self.evidence.input_revision.revision != self.input_revision_id:
+            raise ValueError("scope evidence/input revision mismatch")
+        if self.applicability_rule is not None and type(self.applicability_rule) is not RuleRef:
+            raise TypeError("applicability_rule must be RuleRef")
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,6 +114,8 @@ class VerifiedCompatibility:
         for name in ("method_id","consumer_id","input_revision_id",
                      "verification_receipt_ref"):
             required(getattr(self,name),name)
+        if self.evidence.input_revision.revision != self.input_revision_id:
+            raise ValueError("compatibility evidence/input revision mismatch")
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,6 +129,11 @@ class EvidenceCatalog:
     compatibilities: tuple[VerifiedCompatibility,...] = ()
 
     def __post_init__(self):
+        if type(self.scopes) is not tuple or type(self.compatibilities) is not tuple:
+            raise TypeError("immutable tuple evidence catalogs required")
+        if any(type(x) is not VerifiedScope for x in self.scopes) or any(
+                type(x) is not VerifiedCompatibility for x in self.compatibilities):
+            raise TypeError("catalog may contain only typed verified receipts")
         ids=[r.evidence.evidence_id for r in (*self.scopes,*self.compatibilities)]
         if len(ids)!=len(set(ids)):
             raise ValueError("duplicate evidence ID")
@@ -165,6 +177,8 @@ class AnalysisBundle:
         issues:list[str]=[]
         matched:list[str]=[]
         selected:list[AnalysisRun]=[]
+        if len({need.role for need in needs}) != len(needs):
+            raise ValueError("duplicate required roles")
         for need in needs:
             if type(need) is not RequiredRole:
                 raise TypeError("typed required roles only")
@@ -184,6 +198,8 @@ class AnalysisBundle:
                     r.run_id==run.run_id and
                     r.model_revision_id==run.model_revision_id and
                     r.result_generation_id==run.result_generation_id and
+                    r.evidence.input_revision.revision==need.input_revision_id and
+                    r.evidence.source.producer==run.source.producer and
                     set(need.expected_population).issubset(r.population_keys)]
             if len(proofs)!=1:
                 issues.append(f"{need.role}:EVIDENCE_UNRESOLVED_OR_AMBIGUOUS")
@@ -199,7 +215,8 @@ class AnalysisBundle:
                 compatibility=[c for c in catalog.compatibilities
                                if tuple(sorted(c.run_ids))==run_ids and
                                (c.method_id,c.consumer_id,c.input_revision_id)==(
-                                   method,consumer,revision)]
+                                   method,consumer,revision) and
+                               c.evidence.input_revision.revision==revision]
                 if len(compatibility)!=1:
                     issues.append("CROSS_RUN_COMPATIBILITY_UNRESOLVED")
                 else:
