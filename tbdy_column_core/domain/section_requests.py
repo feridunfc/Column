@@ -135,6 +135,37 @@ class AngularCoverage:
         return not self.missing_indices
 
 
+class RadialReferenceStatus(StrEnum):
+    VALIDATED="VALIDATED"
+    DEGENERATE_SAMPLED_HULL="DEGENERATE_SAMPLED_HULL"
+    NONFINITE_SAMPLED_HULL="NONFINITE_SAMPLED_HULL"
+    ORIGIN_NOT_STRICT_INTERIOR="ORIGIN_NOT_STRICT_INTERIOR"
+    KERNEL_BOUNDARY_INCONSISTENT="KERNEL_BOUNDARY_INCONSISTENT"
+
+
+@dataclass(frozen=True, slots=True)
+class RadialReferenceAudit:
+    """Only a sampled convex-hull geometry assertion, not TS500 compliance."""
+    status: RadialReferenceStatus
+    hull_vertex_count: int
+    minimum_signed_origin_clearance: Moment | None
+    required_clearance: Moment
+    def __post_init__(self):
+        if type(self.status) is not RadialReferenceStatus:
+            raise TypeError("RadialReferenceStatus required")
+        if type(self.hull_vertex_count) is not int or self.hull_vertex_count<0:
+            raise ValueError("hull vertex count must be nonnegative int")
+        if type(self.required_clearance) is not Moment or self.required_clearance.as_nmm<=0:
+            raise TypeError("positive Moment clearance required")
+        if self.minimum_signed_origin_clearance is not None and type(self.minimum_signed_origin_clearance) is not Moment:
+            raise TypeError("signed clearance must be Moment or None")
+        if self.status==RadialReferenceStatus.VALIDATED and (
+            self.hull_vertex_count<3 or self.minimum_signed_origin_clearance is None or
+            self.minimum_signed_origin_clearance.as_nmm<=self.required_clearance.as_nmm
+        ):
+            raise ValueError("validated radial reference requires strict interior origin")
+
+
 @dataclass(frozen=True, slots=True)
 class SectionCapacityResult:
     section_ref: RevisionRef
@@ -157,6 +188,7 @@ class SectionCapacityResult:
     frame_model_contract: FrameModelContract
     frame_basis_max_residual: float
     angular_coverage: AngularCoverage | None = None
+    radial_reference_audit: RadialReferenceAudit | None = None
     full_column_design_pass: bool = False
 
     def __post_init__(self):
@@ -194,9 +226,22 @@ class SectionCapacityResult:
             raise ValueError("direct strain state must have exactly one state without angular scan")
         if self.status==SectionStatus.UNDEFINED_MOMENT_DIRECTION and self.angular_coverage is not None:
             raise ValueError("undefined direction must not run an angular scan")
-        if self.radial_capacity is not None and (
-            self.status != SectionStatus.COMPLETE_RADIAL or
-            type(self.radial_capacity) is not Moment):
-            raise ValueError("radial capacity requires COMPLETE_RADIAL")
+        if self.radial_reference_audit is not None and type(self.radial_reference_audit) is not RadialReferenceAudit:
+            raise TypeError("radial_reference_audit must be typed")
+        if self.status==SectionStatus.COMPLETE_RADIAL and (
+            self.radial_reference_audit is None or
+            self.radial_reference_audit.status!=RadialReferenceStatus.VALIDATED or
+            type(self.radial_capacity) is not Moment or
+            self.radial_capacity.as_nmm<=self.applied_policy.moment_tol.as_nmm or
+            type(self.radial_boundary_m2) is not Moment or
+            type(self.radial_boundary_m3) is not Moment
+        ):
+            raise ValueError("complete radial result requires admissibility evidence and finite capacity")
+        if self.status!=SectionStatus.COMPLETE_RADIAL and any(v is not None for v in (
+            self.radial_capacity,self.radial_boundary_m2,self.radial_boundary_m3
+        )):
+            raise ValueError("non-radial-complete state cannot carry a radial capacity")
+        if self.request_kind!="RadialCapacityAtAxialForce" and self.radial_reference_audit is not None:
+            raise ValueError("non-radial request cannot carry radial reference audit")
         if any("PASS" == issue for issue in self.issues):
             raise ValueError("no general code approval in section results")
