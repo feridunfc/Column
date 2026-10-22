@@ -103,10 +103,11 @@ class B5InputFingerprintTests(unittest.TestCase):
             CalculationInputFingerprint(CalculationInputFingerprint.SCHEMA,"0"*63)
         with self.assertRaises(ValueError):
             CalculationInputFingerprint("unsupported-schema","0"*64)
+        expected=digest(p)
         with patch("tbdy_column_core.engineering.input_identity.section_input_fingerprint",
                    side_effect=AssertionError("report must not fingerprint source")):
-            self.assertIn(digest(p),section_report_json(result))
-            self.assertIn(digest(p),section_report_html(result))
+            self.assertIn(expected,section_report_json(result))
+            self.assertIn(expected,section_report_html(result))
 
     def test_unresolved_and_undefined_results_retain_declared_input_identity(self):
         p=fixture_problem(layout="B",angle_count=8,max_iterations=1,
