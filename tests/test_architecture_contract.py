@@ -43,11 +43,26 @@ class ArchitectureContractTests(unittest.TestCase):
             with self.assertRaises(ArchitectureContractError):
                 validate(folder)
 
+    def test_doubled_cr_newline_is_rejected(self):
+        # Unsupported CRCRLF must fail, not be silently 'normalized'.
+        with TemporaryDirectory() as temp:
+            folder = self._copy(temp)
+            name = folder / DOCS[0]
+            canonical = name.read_bytes().replace(b"\r\n", b"\n")
+            name.write_bytes(canonical.replace(b"\n", b"\r\r\n"))
+            with self.assertRaises(ArchitectureContractError):
+                validate(folder)
+
     def test_crlf_checkout_accepted_bom_rejected(self):
         with TemporaryDirectory() as temp:
             folder = self._copy(temp)
             name = folder / DOCS[0]
-            name.write_bytes(name.read_bytes().replace(b"\n", b"\r\n"))
+            # Windows checkout may already use CRLF. First normalize to
+            # canonical LF, then produce exactly one CR per CRLF separator.
+            # Blind LF -> CRLF would create CRCRLF and test the wrong input.
+            canonical = name.read_bytes().replace(b"\r\n", b"\n")
+            self.assertNotIn(b"\r", canonical)
+            name.write_bytes(canonical.replace(b"\n", b"\r\n"))
             self.assertEqual(len(validate(folder)), 3)
             name.write_bytes(b"\xef\xbb\xbf" + name.read_bytes())
             with self.assertRaises(ArchitectureContractError):
