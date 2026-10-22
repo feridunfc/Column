@@ -26,6 +26,11 @@ def section_payload(result: SectionCapacityResult)->dict:
                        "id":result.section_ref.identifier,
                        "revision":result.section_ref.revision},
         "material_revision":result.material_revision.revision,
+        "input_fingerprint":{
+            "schema":result.input_fingerprint.schema,
+            "sha256":result.input_fingerprint.sha256,
+            "interpretation":"declared-input binding; not external authenticity or code approval",
+        },
         "frame_model":{
             "reference":result.frame_model_contract.reference,
             "axial_sign":result.frame_model_contract.axial_sign.value,
@@ -103,6 +108,9 @@ def section_report_html(result: SectionCapacityResult)->str:
     ]
     for k in ("schema","request","status","law_ref","kernel_ref","numeric_root_quality"):
         lines.append(f"<dt>{cell(k)}</dt><dd>{cell(data[k])}</dd>")
+    lines.append("</dl><h2>Calculation input identity</h2><dl>")
+    for key,value in data["input_fingerprint"].items():
+        lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
     lines.append("</dl><h2>Local reference frame (declared, not transformed)</h2><dl>")
     for key,value in data["frame_model"].items():
         lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")

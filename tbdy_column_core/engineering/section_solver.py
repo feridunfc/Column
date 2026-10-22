@@ -16,6 +16,7 @@ from ..domain.coordinates import frame_basis_max_residual
 from ..domain.tolerances import within
 from ..physics.section_capacity import ColumnSectionCapacityError
 from .section_adapter import SectionKernelAdapter,UnsupportedSectionMaterial
+from .input_identity import section_input_fingerprint
 
 KERNEL_REF="Column/legacy/column-pre-clean-20261022:physics/section_capacity.py@b2ac0114a5913e3088df6913de7537d7e0792b44"
 
@@ -41,6 +42,7 @@ class SectionSolver:
         section=problem.section
         request=problem.request
         policy=problem.numerical_policy
+        identity=section_input_fingerprint(problem,kernel_ref=KERNEL_REF)
         issues=[]
         states=[]
         cap=boundary2=boundary3=None
@@ -91,7 +93,7 @@ class SectionSolver:
                         section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
                         states,issues,cap,boundary2,boundary3,None,
                         problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None,
-                        problem.frame_model_contract,basis_error
+                        problem.frame_model_contract,basis_error,identity
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
@@ -150,13 +152,13 @@ class SectionSolver:
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
             step,problem.input_refs,quality,resolved_indices,
-            problem.frame_model_contract,basis_error
+            problem.frame_model_contract,basis_error,identity
         )
 
     @staticmethod
     def _result(section,request,policy,status,states,issues,
                 cap,boundary2,boundary3,step,input_refs,quality,resolved_indices,
-                frame_contract,basis_error):
+                frame_contract,basis_error,input_fingerprint):
         coverage=None
         if resolved_indices is not None:
             count=policy.angle_count
@@ -186,6 +188,7 @@ class SectionSolver:
                 ("As",section.longitudinal.total_area.as_mm2,"mm2"),
             ),
             root_quality=quality,
+            input_fingerprint=input_fingerprint,
             frame_model_contract=frame_contract,
             frame_basis_max_residual=basis_error,
             angular_coverage=coverage,
