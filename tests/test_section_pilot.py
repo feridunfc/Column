@@ -245,6 +245,46 @@ class SectionB1Tests(unittest.TestCase):
             self.assertGreater(aud.near_zero_samples,0)
             self.assertEqual(aud.issue_code,"NEAR_ZERO_WITHOUT_SIGN_BRACKET")
 
+
+    def test_angular_budget_is_separate_from_axial_residual(self):
+        from tbdy_column_core.engineering.convergence import (
+            assess_radial_angular_refinement,AngularRefinementStatus,
+        )
+        p=fixture_problem(layout="B",angle_count=8,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        diag=assess_radial_angular_refinement(p)
+        a=calculate_section(p)
+        fine=calculate_section(replace(
+            p,numerical_policy=replace(p.numerical_policy,angle_count=16)))
+        self.assertEqual(diag.coarse_angle_count,8)
+        self.assertEqual(diag.fine_angle_count,16)
+        self.assertIn(diag.status,(
+            AngularRefinementStatus.OBSERVED_DELTA_WITHIN_BUDGET,
+            AngularRefinementStatus.OBSERVED_DELTA_EXCEEDS_BUDGET))
+        self.assertAlmostEqual(diag.coarse_capacity.as_nmm,
+                               a.radial_capacity.as_nmm,delta=1e-8)
+        self.assertAlmostEqual(diag.fine_capacity.as_nmm,
+                               fine.radial_capacity.as_nmm,delta=1e-8)
+        self.assertAlmostEqual(diag.observed_delta.as_nmm,
+                               abs(diag.fine_capacity.as_nmm-diag.coarse_capacity.as_nmm),
+                               delta=1e-8)
+        self.assertAlmostEqual(diag.numeric_budget.as_nmm,p.numerical_policy.moment_tol.as_nmm)
+        self.assertIn("not a certified",diag.interpretation)
+
+    def test_angular_refinement_unresolved_on_root_failure(self):
+        from tbdy_column_core.engineering.convergence import (
+            assess_radial_angular_refinement,AngularRefinementStatus,
+        )
+        p=fixture_problem(layout="B",angle_count=8,max_iterations=1,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        diag=assess_radial_angular_refinement(p)
+        self.assertEqual(diag.status,AngularRefinementStatus.UNRESOLVED)
+        self.assertIsNone(diag.observed_delta)
+        self.assertIn("INCOMPLETE_NUMERICAL_CAPACITY",diag.issues)
+
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)
