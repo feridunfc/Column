@@ -59,6 +59,18 @@ def section_payload(result: SectionCapacityResult)->dict:
             "missing_indices":list(result.angular_coverage.missing_indices),
             "complete":result.angular_coverage.is_complete,
         },
+        "radial_hull":None if result.radial_hull_evidence is None else {
+            "status":result.radial_hull_evidence.status.value,
+            "usable_direction_count":result.radial_hull_evidence.usable_direction_count,
+            "near_origin_point_count":result.radial_hull_evidence.near_origin_point_count,
+            "maximum_direction_gap_deg":None if result.radial_hull_evidence.maximum_direction_gap is None
+                else result.radial_hull_evidence.maximum_direction_gap.as_deg,
+            "interior_margin_deg":None if result.radial_hull_evidence.interior_margin is None
+                else result.radial_hull_evidence.interior_margin.as_deg,
+            "boundary_alignment_residual_nmm":None if result.radial_hull_evidence.boundary_alignment_residual is None
+                else result.radial_hull_evidence.boundary_alignment_residual.as_nmm,
+            "interpretation":"Sampled convex-hull origin preflight; not continuous section capacity or code PASS",
+        },
         "issues":list(result.issues),
         "numeric_root_quality":result.root_quality,
         "requested_policy":policy(requested),
@@ -132,7 +144,13 @@ def section_report_html(result: SectionCapacityResult)->str:
     lines.append("<h2>Radial result</h2>")
     for k in ("radial_capacity_nmm","radial_boundary_m2_nmm","radial_boundary_m3_nmm","angle_step_deg"):
         lines.append(f"<p>{cell(k)}: {cell(data[k])}</p>")
-    lines.append("<h2>Issues and scope</h2><ul>")
+    lines.append("<h2>Sampled radial-hull preflight</h2><dl>")
+    if data["radial_hull"] is None:
+        lines.append("<dt>Radial hull</dt><dd>NOT APPLICABLE / NOT EVALUATED</dd>")
+    else:
+        for key,value in data["radial_hull"].items():
+            lines.append(f"<dt>{cell(key)}</dt><dd>{cell(value)}</dd>")
+    lines.append("</dl><h2>Issues and scope</h2><ul>")
     for issue in data["issues"]:
         lines.append(f"<li>{cell(issue)}</li>")
     for out in data["outside_scope"]:
