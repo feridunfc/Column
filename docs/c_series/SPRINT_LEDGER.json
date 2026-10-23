@@ -322,16 +322,33 @@
         "C-32"
       ],
       "scope_key": "SUPERVISOR_BATCH",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Sabitleştirilmiş son HEAD/tree, tüm sprint commit/diff/kanıt ve açık bulgular; Supervisor ayrı inceleme, C-02 sürüm kararı ve G0/G1/G2 durumu",
       "required_negative_evidence": "Worker self-acceptance, kaynak hash değiştirerek PASS, açık VIOLATION veya UNVERIFIED ile release reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Independent Supervisor NOT RUN",
+        "Owner deferred tests until end",
+        "No C-02 ratification or B9 root/angular acceptance"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "docs/c_series/C8_SUPERVISOR_BATCH_REVIEW.md",
+        "docs/c_series/OPEN_FINDINGS.md",
+        "docs/c_series/SUPERVISOR_BATCH_HANDOFF.md",
+        "docs/c_series/SPRINT_LOG.md",
+        "docs/c_series/SPRINT_LEDGER.json"
+      ],
+      "evidence": [
+        "C0–C7 exact preceding commit map, test commands prepared but not run"
+      ],
+      "base_head": "d0390ba3c105d4c6fa17645c999e031537b762ad"
     }
-  ]
+  ],
+  "owner_test_mode": "DEFERRED_UNTIL_FINAL_STAGE",
+  "supervisor_review_mode": "NOT_STARTED",
+  "merge_authorization": "HOLD",
+  "latest_candidate_source_head": "d0390ba3c105d4c6fa17645c999e031537b762ad"
 }

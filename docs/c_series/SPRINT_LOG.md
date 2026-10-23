@@ -87,3 +87,10 @@ NEXT SPRINT PRECONDITIONS:
 - **Kod:** `tests/test_c7_column_flow.py` 9 test adayı ve `docs/c_series/C01_C32_SUPERVISOR_MATRIX.md`. Analitik r×F beklenen değer **1000 N × 100 mm = 100,000 Nmm**; B kesit sonuçları sadece izlenen sayısal gözlem, normatif PMM PASS değildir.
 - **Bulgular:** B9-F02/F03, C-02 scope, EI/second-order/stability ve D/E uygunluk yöntemleri açık. Bağımsız Supervisor C-01…C-32 denetim matrisi UNVERIFIED.
 - **TESTS:** kullanıcının talebi gereği koşulmadı. Test başarı oranı iddia edilmiyor, Supervisor PENDING, merge HOLD.
+
+## 2026-10-23 — C8: toplu Supervisor teslimi hazırlığı — IMPLEMENTED_UNTESTED
+
+- **BASE:** `d0390ba3c105d4c6fa17645c999e031537b762ad`; geçmiş C3–C7 kod commit'lerinin SHA dizisi `C8_SUPERVISOR_BATCH_REVIEW.md` dosyasındadır.
+- **Teslim:** `C8_SUPERVISOR_BATCH_REVIEW.md`, `OPEN_FINDINGS.md`, `SUPERVISOR_BATCH_HANDOFF.md`, C-01…C-32 matrisi, toplam kod diff'i ve test runbook'u.
+- **TESTLER:** kullanıcı özellikle C8 sonrası toplu koşu istediğinden bu uygulama safhasında **YÜRÜTÜLMEDİ**. GitHub'un branch push ile otomatik iş yürütmesi, bağımsız Supervisor veya owner talep ettiği toplu testle eş tutulmaz.
+- **Kabul:** `SUPERVISOR_NOT_STARTED` / `MERGE_HOLD` / `B9-F02/F03_OPEN` / `C-02_NOT_RATIFIED`.
