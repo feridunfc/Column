@@ -5,7 +5,7 @@ imports code-dependent rebar-layout candidate-generation functions.
 """
 from __future__ import annotations
 from dataclasses import dataclass
-from math import hypot, isfinite, log, exp
+from math import hypot, isfinite, log, exp, cos, sin, radians
 from ..domain.section_models import RCSection
 from ..domain.section_requests import FrameModelContract
 from ..domain.quantities import Force, Angle
@@ -31,6 +31,8 @@ class RootScanAudit:
     near_zero_samples: int
     smallest_abs_residual_n: float
     sampled_brackets_mm: tuple[tuple[float,float], ...] = ()
+    discovered_jump_crossings: int = 0
+    jump_depths_mm: tuple[float, ...] = ()
 
     def contains_solution(self,c_mm: float)->bool:
         # Inclusive, with a small floating-point coordinate guard. A solved
@@ -42,10 +44,12 @@ class RootScanAudit:
 
     @property
     def accepted_single_bracket(self) -> bool:
-        return self.sign_brackets == 1
+        return self.sign_brackets == 1 and self.discovered_jump_crossings == 0
 
     @property
     def issue_code(self) -> str:
+        if self.discovered_jump_crossings:
+            return "AXIAL_JUMP_CROSSES_TARGET"
         if self.sign_brackets > 1:
             return "MULTIPLE_SAMPLED_ROOT_BRACKETS"
         if self.sign_brackets == 0 and self.near_zero_samples:
@@ -140,8 +144,37 @@ class SectionKernelAdapter:
                 brackets.append((prev_c,c))
             prev=residual
             prev_c=c
+        # The source-pinned point-bar displacement convention subtracts
+        # concrete block stress when a bar centre enters the compression
+        # block. N(c) may JUMP at c=(q_extreme-q_bar)/k1. A sign change
+        # across that jump is not a root. Guard all explicit transitions
+        # rather than falsely accepting a sign-change bracket.
+        nx=cos(radians(angle.as_deg))
+        ny=sin(radians(angle.as_deg))
+        width=self.section.profile.b.as_mm
+        depth=self.section.profile.h.as_mm
+        extreme=(abs(nx)*width+abs(ny)*depth)/2
+        transition_depths=sorted({
+            (extreme-(bar.x2_mm*nx+bar.x3_mm*ny))/material.k1
+            for bar in bars
+        })
+        jumped=[]
+        for c in transition_depths:
+            if not isfinite(c) or c<=c_min or c>=c_max:
+                continue
+            # Relative width exceeds the physics source's 1e-12
+            # half-plane cutoff, while remaining tiny versus section size.
+            gap=max(1e-7*c,1e-7)
+            if c-gap<=0:
+                continue
+            before=self.evaluate(angle,c-gap,material,bars).n_compression_n-target.as_n
+            after=self.evaluate(angle,c+gap,material,bars).n_compression_n-target.as_n
+            if not isfinite(before) or not isfinite(after):
+                raise ColumnSectionCapacityError("nonfinite discontinuity probe")
+            if before*after<=0 or min(abs(before),abs(after))<=force_atol_n:
+                jumped.append(c)
         return RootScanAudit(samples,sign_changes,near_zero_samples,smallest,
-                             tuple(brackets))
+                             tuple(brackets),len(jumped),tuple(jumped))
 
     def solve_one(self, angle: Angle, target: Force, policy,material,bars):
         return solve_capacity_state_for_axial_force(
