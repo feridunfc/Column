@@ -58,7 +58,7 @@ class RadialAdmissibilityB10(unittest.TestCase):
                          RadialReferenceStatus.DEGENERATE_SAMPLED_HULL)
         payload=json.loads(section_report_json(actual))
         self.assertIsNone(payload["radial_capacity_nmm"])
-        self.assertIn("radial_reference_audit",section_report_html(actual))
+        self.assertIn("Sampled radial origin admissibility",section_report_html(actual))
 
     def test_real_fixture_and_forged_result(self):
         actual=calculate_section(self.problem)
