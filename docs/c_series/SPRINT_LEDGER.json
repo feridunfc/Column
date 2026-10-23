@@ -112,16 +112,31 @@
         "C-22"
       ],
       "scope_key": "MEMBER_GEOMETRY",
-      "status": "PLANNED",
+      "status": "TESTED_DRAFT",
       "deliverable": "Değişmez DesignScenario ve TrialContext; gerçek fiziksel uç/yüz; merkez/net/serbest/etkin uzunluk ayrı kaynaklar; prepare_geometry ara çıktısı",
       "required_negative_evidence": "Kat yüksekliğinden net boy üretme, I/J ile alt/üst takası, eksik boyu 0 veya L ile doldurma reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
-      "origin_head": null,
-      "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "issues": [
+        "C-02 scope amendment NOT_RATIFIED",
+        "No source-qualified net/effective length method, only declared evidence",
+        "B9-F02/B9-F03 acceptance remains unresolved"
+      ],
+      "source_branch": "worker/v132-c2-scenario-geometry-20261023",
+      "origin_head": "5892f175c674ff29900ca48c61c5b60fcf2070d4",
+      "integrated_candidate_head": "5892f175c674ff29900ca48c61c5b60fcf2070d4",
+      "files": [
+        "tbdy_column_core/domain/scenario.py",
+        "tbdy_column_core/engineering/member_mechanics.py",
+        "tests/test_c2_scenario_geometry.py",
+        "docs/c_series/SPRINT_C2_GEOMETRY.md"
+      ],
+      "evidence": [
+        "2026-10-23 CI exact implementation HEAD 5892f175c674ff29900ca48c61c5b60fcf2070d4",
+        "https://github.com/feridunfc/Column/actions/runs/39941320817",
+        "4/4 Ubuntu/Windows Python 3.12/3.13 SUCCESS; 95 tests per job, 7 C2 cases",
+        "Only geometry declared, stiffness and second order explicitly NOT READY"
+      ],
+      "implementation_tree": "51efa895ef20a467ece4fa32a89bc54f817e0ecf"
     },
     {
       "id": "C3",
