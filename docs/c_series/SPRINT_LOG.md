@@ -66,3 +66,10 @@ NEXT SPRINT PRECONDITIONS:
 - **Kod:** ilk mertebe C1 `MemberDemandCompiler` çıktısı aynen korunur. Beklenen P-Delta/P-delta eksen ve yöntem dalları dışarıdan sabit nüfusla gelir; fiziksel kaynak `ResponseKey`, analiz run/generation, `RuleRef`, `EvidenceRef` eşleşmesi zorunludur.
 - **Risk kontrolü:** her kaynaklı altı-vektör kendi koordinat/referansıyla taşınır; birbirinden farklı veya zarf/modal maksimumlarından sahte imzalı vektör üretilmez. Kaynağı doğrulanmamış ikinci mertebe etkisi uygulanmaz ve `second_order_approved=False` kalır.
 - **TESTS:** C8 sonrasına ertelendi; `IMPLEMENTED_UNTESTED`. Supervisor PENDING; B9 ve C-02 açık.
+
+## 2026-10-23 — C5: ColumnEvaluator / kapsamlı kolon sonucunun iskeleti — IMPLEMENTED_UNTESTED
+
+- **BASE:** `d98dbdc780e2a8c796ca4697900e549d21e4976f`. `engineering/column_evaluator.py` eklendi.
+- **İş:** yalnız açık `demands_outcome` alır, compilerı gizlice çağırmaz. `ColumnEvaluationProblem` senaryo ve hedef candidate revizyonu doğrular. Kontrol nüfusu dışarıdan ilan edilir; GEOMETRY/PMM/SECOND_ORDER ve D/E başlıkları birbirinden ayrılır. `CandidateResult` risklere göre `UNDETERMINED` ve `CheckResult` ayrı applicability/execution/compliance/coverage/freshness taşır.
+- **Sınır:** C5 henüz kaynaklı istasyon frame ve tam second-order sağlamadığından `NUMERIC_PMM_FRAME_SOURCE_NOT_PRESENT_IN_EVALUATOR` açık olarak işaretlidir; gerçekte yapılmamış PMM kontrolü sayısal başarı gibi gösterilmez. `full_column_pass=False`, `NOT_EVALUATED`.
+- **Test:** C8 sonrası toplu koşu için ertelendi; bu commit `IMPLEMENTED_UNTESTED`.

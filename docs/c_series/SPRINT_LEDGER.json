@@ -216,16 +216,25 @@
         "C-29"
       ],
       "scope_key": "CANDIDATE_EVALUATION",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Açık demands_outcome ile CandidateResult; bağımsız geometri kontrolleri, yalnız kanıtlı TS500/TBDY kesit kontrolleri; C-24 başlıkları ve source-linked sonuç",
       "required_negative_evidence": "Numerical unresolved kapasiteyi PASS sayma, boş beklenen nüfus=PASS, etki olmadan PMM/second-order kontrol tamamlanmış gösterme reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "C5 no unverified numerical PMM from absent station frame",
+        "Full column code PASS absent pending source-backed methods",
+        "B9-F02/F03; CR-C02 open"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/column_evaluator.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "d98dbdc780e2a8c796ca4697900e549d21e4976f"
     },
     {
       "id": "C6",
