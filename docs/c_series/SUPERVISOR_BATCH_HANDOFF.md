@@ -11,3 +11,10 @@ Toplu patch dosyaları sürüm ve SHA bazında buraya eklenecek. İçerik:
 6. Patch alanı Supervisor'ın bağımsız inceleme sonucunu taşır; kod yazan Worker aynı kod için bağımsız kabul vermiş sayılmaz.
 
 **Mevcut G0/G1/G2:** PENDING; **C0/C1:** TESTED_DRAFT; **release:** HOLD. CI başarıları, normatif kaynak onayı veya full-column PASS değildir.
+
+## C2 implementation candidate (2026-10-23)
+
+- `worker/v132-c2-scenario-geometry-20261023@5892f175c674ff29900ca48c61c5b60fcf2070d4`, tree `51efa895ef20a467ece4fa32a89bc54f817e0ecf`.
+- [CI 39941320817](https://github.com/feridunfc/Column/actions/runs/39941320817): 4/4 PASS, 95 tests per environment.
+- `DesignScenario` and single-target `TrialContext` immutable; `MemberMechanics.prepare_geometry` only declared geometry, no stiffness/second-order approval.
+- C-02 v1.3.2 amendment and independent acceptance remain `PENDING`, B9-F02/F03 `OPEN`.

@@ -41,3 +41,14 @@ DEFECT FIXED? / NEW FINDING ID:
 SUPERVISOR STATUS: PENDING until independent review
 NEXT SPRINT PRECONDITIONS:
 ```
+
+## 2026-10-23 — C2: scenario/trial + fiziksel geometrinin hazırlanması — TESTED_DRAFT
+
+- **Parent C kontrol HEAD/TREE:** `d33f5dba56ad71ff150353781c6607751ab019bf` / `1e7996b463b381eeb7bf6852b9fb8f449c98bab8`.
+- **C2 implementation HEAD/TREE:** `5892f175c674ff29900ca48c61c5b60fcf2070d4` / `51efa895ef20a467ece4fa32a89bc54f817e0ecf`.
+- **Değişenler:** `domain/scenario.py`, `engineering/member_mechanics.py`, `tests/test_c2_scenario_geometry.py`, `docs/c_series/SPRINT_C2_GEOMETRY.md`. Fiziksel üye ve scenario revizyonları, tek kolonun `TrialContext` üzerinde seçili cage'i, gerçek 3D centerline ve açık kaynaklı ayrı clear/unbraced/effective length kayıtları.
+- **Test/kanıt:** [GitHub Actions 39941320817](https://github.com/feridunfc/Column/actions/runs/39941320817) **4/4 SUCCESS**, Ubuntu/Windows Python 3.12/3.13, **95 unittest/hücre** (7 yeni C2 testi). Codespaces'teki eski 88/88 testi `d33f5d...` HEAD için PASS; yeni C2 eklemesi için Codespaces sonucu henüz verilmedi.
+- **Pozitif:** senaryo/üye/cage kaynak revizyon eşleşmesi, fiziksel alt/üst yüz, bağımsız net ve serbest uzunluk girdileri, trial aday revizyonu değiştiğinde kaynak senaryonun değişmemesi.
+- **Negatif:** eksik clear/unbraced/effective boydan otomatik değer türetilmiyor; doğrulamasız etkin boyun stiff/second-order hazır sayılması reddediliyor; 3D centreline'ı aşan declared clear length, aynı length kind duplikasyonu, yanlış üye hedefi, iki assignment, yanlış aday identity reddediliyor.
+- **Güvenlik sınırı:** yalnız `PHYSICAL_GEOMETRY_DECLARED_ONLY`; `stiffness_ready=False`, `second_order_ready=False`. Ne TS500/TBDY 2. mertebe, ne normatif k, ne `check_column`/PASS eklendi.
+- **Açık:** C-02 sürümlü kapsam ratifikasyonu yok; G0/G1/G2 `PENDING`; B9-F02/F03 `OPEN`. **Supervisor: PENDING; merge/release: HOLD.**
