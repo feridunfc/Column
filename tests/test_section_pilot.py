@@ -448,6 +448,55 @@ class SectionB1Tests(unittest.TestCase):
         self.assertEqual(parsed["frame_model"]["requested_axis_tolerance"],
                          p.numerical_policy.axis_tol)
 
+
+    def test_b6_source_root_must_match_observed_single_bracket(self):
+        from unittest.mock import patch
+        from dataclasses import replace as dc_replace
+        from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
+        p=fixture_problem(layout="B",angle_count=8,
+            request=EnvelopeAtAxialForce(Force.kn(500)))
+        ok=calculate_section(p)
+        self.assertEqual(ok.status,SectionStatus.COMPLETE_ENVELOPE,ok.issues)
+        original=SectionKernelAdapter.solve_one
+        def switch_depth(adapter,angle,target,policy,material,bars):
+            actual=original(adapter,angle,target,policy,material,bars)
+            if actual is None:
+                return None
+            # Intentionally fake a source result with a physically inconsistent
+            # c but perfectly matching N. Detection cannot rely on N alone.
+            return dc_replace(actual,neutral_axis_depth_c_mm=1e10,
+                              n_compression_n=target.as_n)
+        with patch.object(SectionKernelAdapter,"solve_one",switch_depth):
+            suspicious=calculate_section(p)
+        self.assertEqual(suspicious.status,SectionStatus.NUMERIC_UNRESOLVED)
+        self.assertIsNone(suspicious.radial_capacity)
+        self.assertEqual(suspicious.angular_coverage.missing_indices,tuple(range(8)))
+        self.assertTrue(all("ROOT_OUTSIDE_SAMPLED_BRACKET" in i
+                            for i in suspicious.issues))
+
+    def test_b6_three_level_observed_deltas_and_failure(self):
+        from tbdy_column_core.engineering.triple_convergence import (
+            assess_three_level_radial_refinement,TripleRefinementStatus)
+        p=fixture_problem(layout="B",angle_count=8,
+            request=RadialCapacityAtAxialForce(
+                Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
+        outcome=assess_three_level_radial_refinement(p,counts=(8,16,32))
+        self.assertEqual(outcome.counts,(8,16,32))
+        self.assertNotEqual(outcome.verdict,TripleRefinementStatus.NUMERIC_UNRESOLVED,
+                            outcome.issues)
+        self.assertAlmostEqual(outcome.differences_nmm[0],
+                               abs(outcome.capacity_nmm[1]-outcome.capacity_nmm[0]))
+        self.assertAlmostEqual(outcome.differences_nmm[1],
+                               abs(outcome.capacity_nmm[2]-outcome.capacity_nmm[1]))
+        self.assertIn("not a rigorous bound",outcome.interpretation)
+        with self.assertRaises(ValueError):
+            assess_three_level_radial_refinement(p,counts=(8,8,16))
+        p_fail=replace(p,numerical_policy=replace(
+            p.numerical_policy,max_iterations=1))
+        failed=assess_three_level_radial_refinement(p_fail,counts=(8,16,32))
+        self.assertEqual(failed.verdict,TripleRefinementStatus.NUMERIC_UNRESOLVED)
+        self.assertIn(None,failed.capacity_nmm)
+
     def test_same_result_json_html_and_second_section(self):
         for b,h in ((400,600),(450,650)):
             p=fixture_problem(layout="B",b_mm=b,h_mm=h)
