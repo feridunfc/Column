@@ -18,3 +18,7 @@ Toplu patch dosyaları sürüm ve SHA bazında buraya eklenecek. İçerik:
 - [CI 39941320817](https://github.com/feridunfc/Column/actions/runs/39941320817): 4/4 PASS, 95 tests per environment.
 - `DesignScenario` and single-target `TrialContext` immutable; `MemberMechanics.prepare_geometry` only declared geometry, no stiffness/second-order approval.
 - C-02 v1.3.2 amendment and independent acceptance remain `PENDING`, B9-F02/F03 `OPEN`.
+
+## C8 consolidated candidate packet
+
+See `docs/c_series/C8_SUPERVISOR_BATCH_REVIEW.md` and `docs/c_series/OPEN_FINDINGS.md`. Current last implementation code HEAD before C8 `d0390ba3c105d4c6fa17645c999e031537b762ad`. Exact C8 HEAD/TREE is the final branch ref, not asserted until fetched. Supervisor independent review, deferred tests, full-column code acceptance and merge are **not performed**.

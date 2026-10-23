@@ -14,3 +14,6 @@ from .validation import (
     validate_section_problem,calculate_section_validated,
     ValidationStatus,SectionInputValidation,ValidatedSectionOutcome,
 )
+
+# C6 orchestration remains a draft module while C-02 is not ratified.
+# Do not re-export check_column from the v1.3.1 public services boundary.

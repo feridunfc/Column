@@ -15,6 +15,7 @@ from ..domain.coordinates import (
 from ..domain.quantities import Force
 from ..domain.stations import ResponseKey, StationGeometry
 from ..domain.identity import required
+from ..domain.tolerances import NumericalPolicy
 from ..domain.member_models import PhysicalColumn, ColumnCandidate, MemberDemandPopulation
 from ..domain.analysis_bundle import (
     AnalysisBundle, RequiredRole, EvidenceCatalog,
@@ -53,6 +54,7 @@ class MemberDemandCompileProblem:
     required_role: RequiredRole
     evidence_catalog: EvidenceCatalog
     axial_sign: AxialSignConvention
+    numerical_policy: NumericalPolicy
 
     def __post_init__(self):
         for name,typ in (
@@ -60,6 +62,7 @@ class MemberDemandCompileProblem:
             ("population",MemberDemandPopulation),("analysis_bundle",AnalysisBundle),
             ("required_role",RequiredRole),("evidence_catalog",EvidenceCatalog),
             ("axial_sign",AxialSignConvention),
+            ("numerical_policy",NumericalPolicy),
         ):
             if type(getattr(self,name)) is not typ:
                 raise TypeError(f"{name} must be {typ.__name__}")
@@ -67,6 +70,9 @@ class MemberDemandCompileProblem:
             type(item) is not StationDemandBinding for item in self.station_bindings
         ):
             raise TypeError("immutable typed station population bindings required")
+        if any(binding.geometry.matching_tol.as_mm > self.numerical_policy.geometric_tol.as_mm
+               for binding in self.station_bindings):
+            raise ValueError("station matching tolerance exceeds NumericalPolicy.geometric_tol")
         self.candidate.validate_for(self.member)
         if self.population.member_ref!=self.member.ref:
             raise ValueError("source population for another physical member")
@@ -142,7 +148,7 @@ def _position_issue(problem: MemberDemandCompileProblem, binding: StationDemandB
     projection=sum(x*y for x,y in zip(m,d))/length
     perpendicular=hypot(hypot(*(m[i]-projection*d[i]/length for i in (0,1))),
                         m[2]-projection*d[2]/length)
-    tol=binding.geometry.matching_tol.as_mm
+    tol=min(binding.geometry.matching_tol.as_mm,problem.numerical_policy.geometric_tol.as_mm)
     if projection < -tol or projection > length+tol or perpendicular>tol:
         return "POSITION_OFF_PHYSICAL_COLUMN"
     if abs(projection-binding.geometry.physical_station.as_mm)>tol:

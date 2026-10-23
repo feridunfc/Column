@@ -106,3 +106,13 @@ class MemberMechanics:
             member.ref,chosen.ref,trial.scenario.ref,trial.ref,member.bottom,member.top,
             member.bottom_face,member.top_face,length,problem.supplied_lengths,missing
         )
+
+    @staticmethod
+    def prepare_stiffness(trial,geometry,declarations):
+        from .stability import StabilityCensus
+        return StabilityCensus.prepare_stiffness(trial,geometry,declarations)
+
+    @staticmethod
+    def resolve(geometry,stiffness,story,basis):
+        from .stability import StabilityCensus
+        return StabilityCensus.resolve(geometry,stiffness,story,basis)

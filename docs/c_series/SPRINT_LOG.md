@@ -52,3 +52,55 @@ NEXT SPRINT PRECONDITIONS:
 - **Negatif:** eksik clear/unbraced/effective boydan otomatik değer türetilmiyor; doğrulamasız etkin boyun stiff/second-order hazır sayılması reddediliyor; 3D centreline'ı aşan declared clear length, aynı length kind duplikasyonu, yanlış üye hedefi, iki assignment, yanlış aday identity reddediliyor.
 - **Güvenlik sınırı:** yalnız `PHYSICAL_GEOMETRY_DECLARED_ONLY`; `stiffness_ready=False`, `second_order_ready=False`. Ne TS500/TBDY 2. mertebe, ne normatif k, ne `check_column`/PASS eklendi.
 - **Açık:** C-02 sürümlü kapsam ratifikasyonu yok; G0/G1/G2 `PENDING`; B9-F02/F03 `OPEN`. **Supervisor: PENDING; merge/release: HOLD.**
+
+## 2026-10-23 — C3: EI, kat ve ikinci-mertebe kaynak nüfusu — IMPLEMENTED_UNTESTED
+
+- **BASE:** `e560b825003b44855f3b19091f90c106d06ccc92` (TREE `1abda87cf2944c7aa951b7d0686d8fd59f700c11`); ayrı `worker/v132-c3-c8-column-candidate-20261023` dalı.
+- **Kod:** `engineering/stability.py` gerçek source-bound EI, x2/x3 ve GLOBAL_P_DELTA/LOCAL_P_DELTA yöntem-kanıt-id ve tam kat üye nüfusu; `MemberMechanics.prepare_stiffness/resolve` başvuruları.
+- **Koruma:** kanıtsız/eksik EI, eksik kat nüfusu, eksik veya uyuşmayan second-order run ve yöntem açık issue; sonuç `DEPENDENCY_DECLARED_UNRESOLVED`. Hesaplanmış ikinci mertebe/TS500 uygunluğu iddiası yok.
+- **TESTS:** sahibi C8 sonrasına erteledi; **BU SPRINT TEST EDİLMEDİ**. Supervisor PENDING, CR-C02 açık.
+
+## 2026-10-23 — C4: kaynak ve etki dallarının birleştirilmesi — IMPLEMENTED_UNTESTED
+
+- **BASE:** `46c4ff91ac648a26c6375ca3330f3d4b0a3eff67`; `engineering/full_member_demand.py` eklendi.
+- **Kod:** ilk mertebe C1 `MemberDemandCompiler` çıktısı aynen korunur. Beklenen P-Delta/P-delta eksen ve yöntem dalları dışarıdan sabit nüfusla gelir; fiziksel kaynak `ResponseKey`, analiz run/generation, `RuleRef`, `EvidenceRef` eşleşmesi zorunludur.
+- **Risk kontrolü:** her kaynaklı altı-vektör kendi koordinat/referansıyla taşınır; birbirinden farklı veya zarf/modal maksimumlarından sahte imzalı vektör üretilmez. Kaynağı doğrulanmamış ikinci mertebe etkisi uygulanmaz ve `second_order_approved=False` kalır.
+- **TESTS:** C8 sonrasına ertelendi; `IMPLEMENTED_UNTESTED`. Supervisor PENDING; B9 ve C-02 açık.
+
+## 2026-10-23 — C5: ColumnEvaluator / kapsamlı kolon sonucunun iskeleti — IMPLEMENTED_UNTESTED
+
+- **BASE:** `d98dbdc780e2a8c796ca4697900e549d21e4976f`. `engineering/column_evaluator.py` eklendi.
+- **İş:** yalnız açık `demands_outcome` alır, compilerı gizlice çağırmaz. `ColumnEvaluationProblem` senaryo ve hedef candidate revizyonu doğrular. Kontrol nüfusu dışarıdan ilan edilir; GEOMETRY/PMM/SECOND_ORDER ve D/E başlıkları birbirinden ayrılır. `CandidateResult` risklere göre `UNDETERMINED` ve `CheckResult` ayrı applicability/execution/compliance/coverage/freshness taşır.
+- **Sınır:** C5 henüz kaynaklı istasyon frame ve tam second-order sağlamadığından `NUMERIC_PMM_FRAME_SOURCE_NOT_PRESENT_IN_EVALUATOR` açık olarak işaretlidir; gerçekte yapılmamış PMM kontrolü sayısal başarı gibi gösterilmez. `full_column_pass=False`, `NOT_EVALUATED`.
+- **Test:** C8 sonrası toplu koşu için ertelendi; bu commit `IMPLEMENTED_UNTESTED`.
+
+## 2026-10-23 — C6: public check_column + tek ColumnResult/JSON/HTML — IMPLEMENTED_UNTESTED
+
+- **BASE:** `4e6da09fb20ded6d19f824d4ba63963e21149b95`.
+- **Kod:** `application/column_check.py` açık tek yönlü C2→C3→C4→C5 akışını ve kaynak bağlı `CheckRequest`/değişmez `ColumnResult` değerini kurar. `application/services.py` içinden public `check_column` erişimi verilir. `reporting/column_report.py` aynı sonuçtan strict JSON ve escaped HTML üretir.
+- **Sınır:** tasarım araması, ETABS API, ikinci-mertebe hesap, kesme/sargı, birleşim veya normatif PASS yok. Sonuç `INCOMPLETE_NOT_CODE_APPROVED` ve tüm kaynak/coverage meselelerini taşır. `ColumnResult` tüm zorunlu check başlıklarını kaybetmeden korur.
+- **TESTS:** C8 sonrası toplu koşu için ertelendi; `IMPLEMENTED_UNTESTED`. Supervisor ve merge PENDING.
+
+## 2026-10-23 — C7: test/oracle ve 32 maddelik denetim paketi — IMPLEMENTED_UNTESTED
+
+- **BASE:** `50bb11a4aa3853a0d665e7e98b9cc87f9d6babf3`. C7.1 ara kod HEAD `50bb11a4aa3853a0d665e7e98b9cc87f9d6babf3` ile C4 kaynak istasyon frame eşlemesi ve C5 bağımsız B sayısal **diagnostic** eklenmiştir.
+- **Kod:** `tests/test_c7_column_flow.py` 9 test adayı ve `docs/c_series/C01_C32_SUPERVISOR_MATRIX.md`. Analitik r×F beklenen değer **1000 N × 100 mm = 100,000 Nmm**; B kesit sonuçları sadece izlenen sayısal gözlem, normatif PMM PASS değildir.
+- **Bulgular:** B9-F02/F03, C-02 scope, EI/second-order/stability ve D/E uygunluk yöntemleri açık. Bağımsız Supervisor C-01…C-32 denetim matrisi UNVERIFIED.
+- **TESTS:** kullanıcının talebi gereği koşulmadı. Test başarı oranı iddia edilmiyor, Supervisor PENDING, merge HOLD.
+
+## 2026-10-23 — C8: toplu Supervisor teslimi hazırlığı — IMPLEMENTED_UNTESTED
+
+- **BASE:** `d0390ba3c105d4c6fa17645c999e031537b762ad`; geçmiş C3–C7 kod commit'lerinin SHA dizisi `C8_SUPERVISOR_BATCH_REVIEW.md` dosyasındadır.
+- **Teslim:** `C8_SUPERVISOR_BATCH_REVIEW.md`, `OPEN_FINDINGS.md`, `SUPERVISOR_BATCH_HANDOFF.md`, C-01…C-32 matrisi, toplam kod diff'i ve test runbook'u.
+- **TESTLER:** kullanıcı özellikle C8 sonrası toplu koşu istediğinden bu uygulama safhasında **YÜRÜTÜLMEDİ**. GitHub'un branch push ile otomatik iş yürütmesi, bağımsız Supervisor veya owner talep ettiği toplu testle eş tutulmaz.
+- **Kabul:** `SUPERVISOR_NOT_STARTED` / `MERGE_HOLD` / `B9-F02/F03_OPEN` / `C-02_NOT_RATIFIED`.
+
+ 
+## 2026-10-23 — CORRECTION: post-handoff independent audit evidence
+
+- **Audited HEAD:** `1a4b6ffa05e69f929248ceb1956af9a0ce33098c` (pre-revision candidate).
+- **Provenance:** user-supplied independent repository audit; not a Supervisor disposition.
+- **Environment/command:** Linux, Python 3.12; `python -B -m unittest discover -s tests -v`.
+- **Reported result:** 104 tests passed; `tools/check_architecture_contract.py` passed.
+- **Not observed:** Windows, Python 3.13 and GitHub Actions acceptance for this exact audit.
+- **Disposition:** `CHANGES_REQUIRED`; T1/T2 and further findings remain open until a subsequent exact-HEAD run and review. Historical `IMPLEMENTED_UNTESTED` entries above describe their original authoring time and are not silently rewritten.

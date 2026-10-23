@@ -3,7 +3,7 @@
   "constitution_release": "COLUMN-OOP-1.3.1-20261022",
   "source_main_head": "9269a00f5f5471ab68413c039912cafb2cf4db39",
   "c_candidate_baseline": "7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
-  "c_branch": "worker/v132-c1-member-demand-20261023",
+  "c_branch": "worker/v132-c3-c8-column-candidate-20261023",
   "owner_directive": "2026-10-23: move to C, log each sprint; one consolidated Supervisor patch at end",
   "change_control": {
     "c02_request": "docs/c_series/CHANGE_REQUEST_C02_C_SCOPE.md",
@@ -150,16 +150,26 @@
         "C-23"
       ],
       "scope_key": "MECHANICS_STABILITY",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "MemberMechanics.prepare_stiffness ve resolve; açık yön, run ve yöntem; EI modeli ve P-Delta/local P-delta etkisi için kaynak kanıtları",
       "required_negative_evidence": "Kanıtsız EI/k uç koşulu, atlanan veya iki kez uygulanan 2. mertebe, hedef kolonla tüm katın temsil edilmesi reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Declared EI not verified normatively",
+        "No P-Delta/P-delta numeric method approved",
+        "C-02 pending; B9-F02/F03 unresolved"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/stability.py",
+        "tbdy_column_core/engineering/member_mechanics.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "e560b825003b44855f3b19091f90c106d06ccc92"
     },
     {
       "id": "C4",
@@ -173,16 +183,25 @@
         "C-21"
       ],
       "scope_key": "DEMAND_COMPILATION",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Anayasa C-21 imzasına uyumlu scenario/trial/mechanics outcome; kaynaklar, türetilmiş dal ve iki mertebe kapsamı; kombinasyon/step istasyon nüfusu",
       "required_negative_evidence": "Case/step ve farklı kaynak runlarını gizli birleştirme; modal/zarfı eşzamanlı imzalı sayma; eksik dalı silme reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Second-order action methods not independently qualified; no amplification",
+        "C-02 pending",
+        "B9-F02/F03 open"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/full_member_demand.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "46c4ff91ac648a26c6375ca3330f3d4b0a3eff67"
     },
     {
       "id": "C5",
@@ -197,16 +216,25 @@
         "C-29"
       ],
       "scope_key": "CANDIDATE_EVALUATION",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Açık demands_outcome ile CandidateResult; bağımsız geometri kontrolleri, yalnız kanıtlı TS500/TBDY kesit kontrolleri; C-24 başlıkları ve source-linked sonuç",
       "required_negative_evidence": "Numerical unresolved kapasiteyi PASS sayma, boş beklenen nüfus=PASS, etki olmadan PMM/second-order kontrol tamamlanmış gösterme reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "C5 no unverified numerical PMM from absent station frame",
+        "Full column code PASS absent pending source-backed methods",
+        "B9-F02/F03; CR-C02 open"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/column_evaluator.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "d98dbdc780e2a8c796ca4697900e549d21e4976f"
     },
     {
       "id": "C6",
@@ -220,16 +248,27 @@
         "C-28"
       ],
       "scope_key": "PUBLIC_CHECK_COLUMN",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "CheckRequest + sabit aday; açık evaluation akışı; tek immutable ColumnResult JSON/HTML; D/E henüz yoksa eksik kontrol kaydı",
       "required_negative_evidence": "Design aramasını gizlice başlatma; D/E kapsamını yapılan gösterme; kısmi kapsamdan ELIGIBLE/PASS üretme reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Full column D/E methods and B9 numerics unresolved",
+        "Only source-bound first-order, no second-order code PASS",
+        "C-02 ratification and G0/G1/G2 pending"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/application/column_check.py",
+        "tbdy_column_core/application/services.py",
+        "tbdy_column_core/reporting/column_report.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "4e6da09fb20ded6d19f824d4ba63963e21149b95"
     },
     {
       "id": "C7",
@@ -244,16 +283,32 @@
         "C-32"
       ],
       "scope_key": "ACCEPTANCE_PREP",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Analitik ve bağımsız sayısal oracle; sınır/negatif senaryolar; dosya+CI kanıtları; C-01…C-32 ve C sprint kapsam matrisi",
       "required_negative_evidence": "Test sonucu = normatif onay; üretim değerini oraclea kopyalama; drift'i belge silerek saklama reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "C02-SCOPE",
+        "B9-F02",
+        "B9-F03",
+        "Second-order EI and story basis still not verified",
+        "Independent tests and Supervisor review outstanding"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/full_member_demand.py",
+        "tbdy_column_core/engineering/column_evaluator.py",
+        "tbdy_column_core/reporting/column_report.py",
+        "tests/test_c7_column_flow.py",
+        "docs/c_series/C01_C32_SUPERVISOR_MATRIX.md"
+      ],
+      "evidence": [
+        "C7 independent analytical 1000 N x 100 mm source frame reference authored",
+        "9 C7 test methods authored, execution deferred"
+      ],
+      "base_head": "50bb11a4aa3853a0d665e7e98b9cc87f9d6babf3"
     },
     {
       "id": "C8",
@@ -267,16 +322,47 @@
         "C-32"
       ],
       "scope_key": "SUPERVISOR_BATCH",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Sabitleştirilmiş son HEAD/tree, tüm sprint commit/diff/kanıt ve açık bulgular; Supervisor ayrı inceleme, C-02 sürüm kararı ve G0/G1/G2 durumu",
       "required_negative_evidence": "Worker self-acceptance, kaynak hash değiştirerek PASS, açık VIOLATION veya UNVERIFIED ile release reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Independent Supervisor NOT RUN",
+        "Owner deferred tests until end",
+        "No C-02 ratification or B9 root/angular acceptance"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "docs/c_series/C8_SUPERVISOR_BATCH_REVIEW.md",
+        "docs/c_series/OPEN_FINDINGS.md",
+        "docs/c_series/SUPERVISOR_BATCH_HANDOFF.md",
+        "docs/c_series/SPRINT_LOG.md",
+        "docs/c_series/SPRINT_LEDGER.json"
+      ],
+      "evidence": [
+        "C0–C7 exact preceding commit map, test commands prepared but not run"
+      ],
+      "base_head": "d0390ba3c105d4c6fa17645c999e031537b762ad"
+    }
+  ],
+  "owner_test_mode": "DEFERRED_UNTIL_FINAL_STAGE",
+  "supervisor_review_mode": "NOT_STARTED",
+  "merge_authorization": "HOLD",
+  "latest_candidate_source_head": "d0390ba3c105d4c6fa17645c999e031537b762ad",
+  "validation_corrections": [
+    {
+      "date": "2026-10-23",
+      "source": "user-provided independent repository audit; not an independent Supervisor disposition",
+      "audited_head": "1a4b6ffa05e69f929248ceb1956af9a0ce33098c",
+      "environment": "Linux, Python 3.12",
+      "command": "python -B -m unittest discover -s tests -v",
+      "reported_result": "104 tests passed",
+      "architecture_contract": "PASS",
+      "windows_python_3_13_and_github_actions": "NOT_OBSERVED",
+      "disposition": "CHANGES_REQUIRED",
+      "note": "Historical sprint status entries are retained; this correction records later evidence without rewriting the original authoring-time state."
     }
   ]
 }

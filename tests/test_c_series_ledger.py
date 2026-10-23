@@ -13,7 +13,7 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 LEDGER=ROOT/"docs"/"c_series"/"SPRINT_LEDGER.json"
 SHA=re.compile(r"^[0-9a-f]{40}$")
-STATES={"PLANNED","TESTED_DRAFT","BLOCKED","FIXED_PENDING_REVIEW","ACCEPTED"}
+STATES={"PLANNED","IMPLEMENTED_UNTESTED","TESTED_DRAFT","BLOCKED","FIXED_PENDING_REVIEW","ACCEPTED"}
 
 
 class CSeriesLedgerTests(unittest.TestCase):
