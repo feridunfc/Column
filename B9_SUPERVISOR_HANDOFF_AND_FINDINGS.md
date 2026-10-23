@@ -50,7 +50,7 @@ independent assessment.
 ```powershell
 python tools/check_architecture_contract.py
 python tools/validate_b8_ledger.py
-python tools/b9_review_release_gate.py
+python -m tools.b9_review_release_gate
 python -B -m unittest discover -s tests -v
 python -B -m examples.section_pilot
 python -B -m examples.b9_numerical_review

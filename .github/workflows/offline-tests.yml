@@ -29,6 +29,6 @@ jobs:
       - name: Verify indexed constitutional and AB evidence
         run: python tools/validate_b8_ledger.py
       - name: Verify B9 release remains HOLD
-        run: python tools/b9_review_release_gate.py
+        run: python -m tools.b9_review_release_gate
       - name: Publish observed 72 144 288 numeric diagnostics
         run: python -m examples.b9_numerical_review
