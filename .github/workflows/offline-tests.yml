@@ -26,3 +26,9 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Execute offline section example
         run: python -m examples.section_pilot
+      - name: Verify indexed constitutional and AB evidence
+        run: python tools/validate_b8_ledger.py
+      - name: Verify B9 release remains HOLD
+        run: python tools/b9_review_release_gate.py
+      - name: Publish observed 72 144 288 numeric diagnostics
+        run: python -m examples.b9_numerical_review
