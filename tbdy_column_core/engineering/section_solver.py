@@ -20,7 +20,7 @@ from ..physics.section_capacity import ColumnSectionCapacityError
 from .section_adapter import SectionKernelAdapter,UnsupportedSectionMaterial
 from .input_identity import section_input_fingerprint
 
-KERNEL_REF="Column/legacy/column-pre-clean-20261022:physics/section_capacity.py@b2ac0114a5913e3088df6913de7537d7e0792b44"
+KERNEL_REF="13670adf184a906e059452b41cbf9e8b946e986b"
 
 
 class SectionSolver:
@@ -100,7 +100,7 @@ class SectionSolver:
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
-                quality="DUAL_GRID_SINGLE_SAMPLED_BRACKET_NOT_GLOBAL_ROOT_PROOF"
+                quality="CONTINUOUS_MONOTONE_AXIAL_MODEL_SINGLE_BRACKET_CHECK"
                 kernel_states=[]
                 resolved_indices=[]
                 for j in range(angle_count):

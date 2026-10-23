@@ -25,7 +25,7 @@ class UnsupportedSectionMaterial(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class RootScanAudit:
-    """Observed numerical evidence only; never a uniqueness certificate."""
+    """Observed scan evidence for the continuous monotone axial model."""
     sample_count: int
     sign_brackets: int
     near_zero_samples: int
@@ -49,7 +49,7 @@ class RootScanAudit:
     @property
     def issue_code(self) -> str:
         if self.discovered_jump_crossings:
-            return "AXIAL_JUMP_CROSSES_TARGET"
+            return "AXIAL_DISCONTINUITY_DETECTED"
         if self.sign_brackets > 1:
             return "MULTIPLE_SAMPLED_ROOT_BRACKETS"
         if self.sign_brackets == 0 and self.near_zero_samples:
@@ -110,11 +110,11 @@ class SectionKernelAdapter:
                               material, bars, *, force_atol_n: float) -> "RootScanAudit":
         """Source-bound dual-density logarithmic scan, not a global-root proof.
 
-        The fine grid contains the 180 original solver sample abscissae and
-        their geometric midpoints. Reject >1 crossings or an unbracketed
-        near-zero sample instead of taking an arbitrarily selected root.
-        Counts are *sampled* brackets; a hidden tangential root is still
-        possible. Exact source physics is called for every N(c).
+        The supported finite-area concrete-block model has continuous,
+        nondecreasing axial resultant N(c): the compression region grows
+        monotonically after excluding actual circular bar overlap, and each
+        bar's strain/stress is nondecreasing with c. This scan is a numerical
+        regression check, not the mathematical uniqueness argument.
         """
         if not isfinite(force_atol_n) or force_atol_n <= 0:
             raise ValueError("force_atol_n must be finite positive")
@@ -144,11 +144,9 @@ class SectionKernelAdapter:
                 brackets.append((prev_c,c))
             prev=residual
             prev_c=c
-        # The source-pinned point-bar displacement convention subtracts
-        # concrete block stress when a bar centre enters the compression
-        # block. N(c) may JUMP at c=(q_extreme-q_bar)/k1. A sign change
-        # across that jump is not a root. Guard all explicit transitions
-        # rather than falsely accepting a sign-change bracket.
+        # Probe each bar/block boundary for a residual discontinuity. The
+        # finite-area overlap model must remain continuous through every
+        # transition; a sign change by itself is not evidence of a jump.
         nx=cos(radians(angle.as_deg))
         ny=sin(radians(angle.as_deg))
         width=self.section.profile.b.as_mm
@@ -164,14 +162,14 @@ class SectionKernelAdapter:
                 continue
             # Relative width exceeds the physics source's 1e-12
             # half-plane cutoff, while remaining tiny versus section size.
-            gap=max(1e-7*c,1e-7)
+            gap=max(1e-8*c,1e-8)
             if c-gap<=0:
                 continue
             before=self.evaluate(angle,c-gap,material,bars).n_compression_n-target.as_n
             after=self.evaluate(angle,c+gap,material,bars).n_compression_n-target.as_n
             if not isfinite(before) or not isfinite(after):
                 raise ColumnSectionCapacityError("nonfinite discontinuity probe")
-            if before*after<=0 or min(abs(before),abs(after))<=force_atol_n:
+            if abs(after-before) > max(2.0*force_atol_n,1e-6):
                 jumped.append(c)
         return RootScanAudit(samples,sign_changes,near_zero_samples,smallest,
                              tuple(brackets),len(jumped),tuple(jumped))
