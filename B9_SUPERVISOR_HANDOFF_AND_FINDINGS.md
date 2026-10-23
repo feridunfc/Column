@@ -24,6 +24,36 @@ independent assessment.
 | B9-F04 | REVIEW HOLD | C-13/C-14: typed `SourceMetadata`, `EvidenceCatalog` and `AnalysisBundle.qualify` enforce provenance/role/consumer/coverage contracts, but authenticity of a real external verifier/record cannot be established by constructing typed receipts. | Independent review of source scope and negative role/producer/semantics tests with a concrete authenticated producer integration when required. |
 | B9-F05 | REVIEW HOLD | C-28 and A/B reports: numerical result is explicitly **not** a column design check. Partial envelope, missing member demand, stability, shear, confinement, joint checks remain unperformed. | No claim beyond A/B. A/B can be accepted only to its constitutional scope, after full G0/G1/G2 review. |
 
+## Observed angular-resolution numerical failure — measured B9 CI
+
+**Evidence:** exact code HEAD `b9bc32f8500354ff8bc669f9021869484aa7390c`,
+run `39911340948`, all four environments successful at the
+development/test level, producing matching numeric observations:
+
+| Angle population | Sampled radial capacity (Nmm) | kNm |
+|---|---:|---:|
+| 72 | 264894954.85597295 | 264.894954856 |
+| 144 | 264910256.12575525 | 264.910256126 |
+| 288 | 264917904.34415603 | 264.917904344 |
+
+- 72→144 observed difference = **15301.2697823 Nmm**.
+- 144→288 observed difference = **7648.2184008 Nmm**.
+- User-supplied numerical policy Moment budget = **1000 Nmm**
+  for *each* step, relative tolerance = 0.
+- Both differences exceed budget. B9 numeric verdict:
+  `OBSERVED_NOT_STABLE`. The ratio to allowed budget is about
+  15.30 and 7.65, respectively.
+- The two sampled differences diminish but do **not** prove the limit
+  has converged, nor do they identify an acceptable final angular
+  resolution or globally unique axial root.
+
+**FND-B9-03 remains BLOCKER** on those concrete measurements. The
+source-bound physics, numerical-policy value and independent oracle
+were **not** adjusted to make this pass. The clear next engineering
+task is a methodologically justified angular refinement/capacity
+extraction strategy and explicit policy/fail-closed status, reviewed
+independently before any release.
+
 ## Procedural review steps for independent acceptance owner
 
 1. Independently read `COLUMN_CONSTITUTION.md`, `COLUMN_WORKER_AB.md`,
