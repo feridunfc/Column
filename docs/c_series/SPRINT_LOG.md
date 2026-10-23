@@ -52,3 +52,10 @@ NEXT SPRINT PRECONDITIONS:
 - **Negatif:** eksik clear/unbraced/effective boydan otomatik değer türetilmiyor; doğrulamasız etkin boyun stiff/second-order hazır sayılması reddediliyor; 3D centreline'ı aşan declared clear length, aynı length kind duplikasyonu, yanlış üye hedefi, iki assignment, yanlış aday identity reddediliyor.
 - **Güvenlik sınırı:** yalnız `PHYSICAL_GEOMETRY_DECLARED_ONLY`; `stiffness_ready=False`, `second_order_ready=False`. Ne TS500/TBDY 2. mertebe, ne normatif k, ne `check_column`/PASS eklendi.
 - **Açık:** C-02 sürümlü kapsam ratifikasyonu yok; G0/G1/G2 `PENDING`; B9-F02/F03 `OPEN`. **Supervisor: PENDING; merge/release: HOLD.**
+
+## 2026-10-23 — C3: EI, kat ve ikinci-mertebe kaynak nüfusu — IMPLEMENTED_UNTESTED
+
+- **BASE:** `e560b825003b44855f3b19091f90c106d06ccc92` (TREE `1abda87cf2944c7aa951b7d0686d8fd59f700c11`); ayrı `worker/v132-c3-c8-column-candidate-20261023` dalı.
+- **Kod:** `engineering/stability.py` gerçek source-bound EI, x2/x3 ve GLOBAL_P_DELTA/LOCAL_P_DELTA yöntem-kanıt-id ve tam kat üye nüfusu; `MemberMechanics.prepare_stiffness/resolve` başvuruları.
+- **Koruma:** kanıtsız/eksik EI, eksik kat nüfusu, eksik veya uyuşmayan second-order run ve yöntem açık issue; sonuç `DEPENDENCY_DECLARED_UNRESOLVED`. Hesaplanmış ikinci mertebe/TS500 uygunluğu iddiası yok.
+- **TESTS:** sahibi C8 sonrasına erteledi; **BU SPRINT TEST EDİLMEDİ**. Supervisor PENDING, CR-C02 açık.

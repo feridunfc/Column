@@ -3,7 +3,7 @@
   "constitution_release": "COLUMN-OOP-1.3.1-20261022",
   "source_main_head": "9269a00f5f5471ab68413c039912cafb2cf4db39",
   "c_candidate_baseline": "7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
-  "c_branch": "worker/v132-c1-member-demand-20261023",
+  "c_branch": "worker/v132-c3-c8-column-candidate-20261023",
   "owner_directive": "2026-10-23: move to C, log each sprint; one consolidated Supervisor patch at end",
   "change_control": {
     "c02_request": "docs/c_series/CHANGE_REQUEST_C02_C_SCOPE.md",
@@ -150,16 +150,26 @@
         "C-23"
       ],
       "scope_key": "MECHANICS_STABILITY",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "MemberMechanics.prepare_stiffness ve resolve; açık yön, run ve yöntem; EI modeli ve P-Delta/local P-delta etkisi için kaynak kanıtları",
       "required_negative_evidence": "Kanıtsız EI/k uç koşulu, atlanan veya iki kez uygulanan 2. mertebe, hedef kolonla tüm katın temsil edilmesi reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Declared EI not verified normatively",
+        "No P-Delta/P-delta numeric method approved",
+        "C-02 pending; B9-F02/F03 unresolved"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/stability.py",
+        "tbdy_column_core/engineering/member_mechanics.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "e560b825003b44855f3b19091f90c106d06ccc92"
     },
     {
       "id": "C4",
