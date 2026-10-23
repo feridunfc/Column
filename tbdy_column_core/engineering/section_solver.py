@@ -116,6 +116,9 @@ class SectionSolver:
                         if solution is None:
                             issues.append(f"ANGLE_{j}:NO_QUALIFIED_NUMERIC_ROOT")
                             continue
+                        if not audit.contains_solution(solution.neutral_axis_depth_c_mm):
+                            issues.append(f"ANGLE_{j}:ROOT_OUTSIDE_SAMPLED_BRACKET")
+                            continue
                         resid=abs(solution.n_compression_n-target.as_n)
                         if not within(solution.n_compression_n,target.as_n,
                             policy.force_balance_tol.as_n,policy.relative_tol):

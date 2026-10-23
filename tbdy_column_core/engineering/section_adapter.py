@@ -30,6 +30,15 @@ class RootScanAudit:
     sign_brackets: int
     near_zero_samples: int
     smallest_abs_residual_n: float
+    sampled_brackets_mm: tuple[tuple[float,float], ...] = ()
+
+    def contains_solution(self,c_mm: float)->bool:
+        # Inclusive, with a small floating-point coordinate guard. A solved
+        # root in an *unrelated* depth interval cannot be silently accepted.
+        if not isfinite(c_mm) or c_mm <= 0:
+            return False
+        return any(lo*(1-1e-10)<=c_mm<=hi*(1+1e-10)
+                   for lo,hi in self.sampled_brackets_mm)
 
     @property
     def accepted_single_bracket(self) -> bool:
@@ -111,7 +120,9 @@ class SectionKernelAdapter:
         samples=359
         log_step=log(c_max/c_min)/(samples-1)
         prev=None
+        prev_c=None
         sign_changes=0
+        brackets=[]
         near_zero_samples=0
         smallest=float("inf")
         for index in range(samples):
@@ -126,8 +137,11 @@ class SectionKernelAdapter:
                 near_zero_samples+=1
             if prev is not None and prev*residual<0:
                 sign_changes+=1
+                brackets.append((prev_c,c))
             prev=residual
-        return RootScanAudit(samples,sign_changes,near_zero_samples,smallest)
+            prev_c=c
+        return RootScanAudit(samples,sign_changes,near_zero_samples,smallest,
+                             tuple(brackets))
 
     def solve_one(self, angle: Angle, target: Force, policy,material,bars):
         return solve_capacity_state_for_axial_force(
