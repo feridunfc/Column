@@ -14,3 +14,6 @@ from .validation import (
     validate_section_problem,calculate_section_validated,
     ValidationStatus,SectionInputValidation,ValidatedSectionOutcome,
 )
+
+# C6 provisional entry point; no normative suitability decision.
+from .column_check import CheckRequest,ColumnResult,check_column

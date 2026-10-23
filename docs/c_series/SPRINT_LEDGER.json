@@ -248,16 +248,27 @@
         "C-28"
       ],
       "scope_key": "PUBLIC_CHECK_COLUMN",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "CheckRequest + sabit aday; açık evaluation akışı; tek immutable ColumnResult JSON/HTML; D/E henüz yoksa eksik kontrol kaydı",
       "required_negative_evidence": "Design aramasını gizlice başlatma; D/E kapsamını yapılan gösterme; kısmi kapsamdan ELIGIBLE/PASS üretme reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Full column D/E methods and B9 numerics unresolved",
+        "Only source-bound first-order, no second-order code PASS",
+        "C-02 ratification and G0/G1/G2 pending"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/application/column_check.py",
+        "tbdy_column_core/application/services.py",
+        "tbdy_column_core/reporting/column_report.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "4e6da09fb20ded6d19f824d4ba63963e21149b95"
     },
     {
       "id": "C7",

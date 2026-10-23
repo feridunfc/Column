@@ -73,3 +73,10 @@ NEXT SPRINT PRECONDITIONS:
 - **İş:** yalnız açık `demands_outcome` alır, compilerı gizlice çağırmaz. `ColumnEvaluationProblem` senaryo ve hedef candidate revizyonu doğrular. Kontrol nüfusu dışarıdan ilan edilir; GEOMETRY/PMM/SECOND_ORDER ve D/E başlıkları birbirinden ayrılır. `CandidateResult` risklere göre `UNDETERMINED` ve `CheckResult` ayrı applicability/execution/compliance/coverage/freshness taşır.
 - **Sınır:** C5 henüz kaynaklı istasyon frame ve tam second-order sağlamadığından `NUMERIC_PMM_FRAME_SOURCE_NOT_PRESENT_IN_EVALUATOR` açık olarak işaretlidir; gerçekte yapılmamış PMM kontrolü sayısal başarı gibi gösterilmez. `full_column_pass=False`, `NOT_EVALUATED`.
 - **Test:** C8 sonrası toplu koşu için ertelendi; bu commit `IMPLEMENTED_UNTESTED`.
+
+## 2026-10-23 — C6: public check_column + tek ColumnResult/JSON/HTML — IMPLEMENTED_UNTESTED
+
+- **BASE:** `4e6da09fb20ded6d19f824d4ba63963e21149b95`.
+- **Kod:** `application/column_check.py` açık tek yönlü C2→C3→C4→C5 akışını ve kaynak bağlı `CheckRequest`/değişmez `ColumnResult` değerini kurar. `application/services.py` içinden public `check_column` erişimi verilir. `reporting/column_report.py` aynı sonuçtan strict JSON ve escaped HTML üretir.
+- **Sınır:** tasarım araması, ETABS API, ikinci-mertebe hesap, kesme/sargı, birleşim veya normatif PASS yok. Sonuç `INCOMPLETE_NOT_CODE_APPROVED` ve tüm kaynak/coverage meselelerini taşır. `ColumnResult` tüm zorunlu check başlıklarını kaybetmeden korur.
+- **TESTS:** C8 sonrası toplu koşu için ertelendi; `IMPLEMENTED_UNTESTED`. Supervisor ve merge PENDING.
