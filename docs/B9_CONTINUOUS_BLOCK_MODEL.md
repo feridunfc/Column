@@ -27,7 +27,7 @@ For the supported model, increasing (c) expands the compression half-plane monot
 - `tests/independent/oracle.py` independently reconstructs the clipped concrete region by strip integration and subtracts circular overlap with a separate oracle implementation.
 - `tests/test_section_pilot.py` checks continuity at bar/block transitions, sampled axial monotonicity, fixed-(N) roots, and complete radial coverage at 288 angles.
 - No tolerances are raised. The 1,000 Nmm angular budget is unchanged.
-- The 72/144/288 convergence gate must still be assessed after the missing-root defect is removed; if successive differences exceed 1,000 Nmm, B9-F03 remains open and requires higher-resolution refinement.
+- The 72/144/288 convergence gate remains a baseline diagnostic. A dedicated Ubuntu/Python 3.12 CI step runs `examples.b9_high_resolution_review` at 1152/2304/4608 angles against the unchanged 1,000 Nmm budget; if either successive difference exceeds budget, B9-F03 remains open.
 - TS500/TBDY full-column compliance, C-02 ratification and G0/G1/G2 independent acceptance remain outside this patch.
 
 **Release remains HOLD until exact-HEAD CI, high-resolution angular convergence and independent review.**
