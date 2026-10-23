@@ -63,6 +63,15 @@ def column_payload(result:ColumnResult)->dict:
         "effects_unapproved":not result.demands.second_order_approved,
         "declared_effect_count":len(result.demands.effects),
       },
+      "pmm_numerical_observations":[{
+        "source_key":repr(x.source_key),
+        "section_status":x.numerical.status.value,
+        "radial_capacity_nmm":None if x.numerical.radial_capacity is None else x.numerical.radial_capacity.as_nmm,
+        "sampled_utilization_not_code_compliance":x.radial_utilization_observed,
+        "angle_count":x.numerical.applied_policy.angle_count,
+        "issues":list(x.numerical.issues),
+        "meaning":x.status,
+      } for x in result.assessment.observations],
       "checks":[{
         "check_id":c.check_id,
         "applicability":c.applicability.value,

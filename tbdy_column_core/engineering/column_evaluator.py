@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from math import hypot
 from ..domain.identity import EvidenceRef,RuleRef,required
 from ..domain.outcomes import (
     Applicability,Execution,Compliance,Freshness,CoverageLedger,CheckResult,
@@ -129,18 +130,33 @@ class ColumnEvaluator:
         checks=[]
         observations=[]
         issues=list(demands_outcome.issues)
-        expected_first=tuple(_key(k) for k in first.expected_keys)
         complete_first=tuple(_key(k) for k in first.expected_keys
-                             if k in {r.key for r in first.records})
+                             if k in {x.key for x in first.records})
+        frames=dict(demands_outcome.station_frames)
+        evidence_ids={x.evidence_id for x in problem.input_evidence}
         if first.status==DemandCompileStatus.READY_FIRST_ORDER_ONLY:
-            # Numerical observed capacity is useful even when subsequent
-            # mandatory second-order or code checks are missing.
-            # The first-order compiler has already verified station alignment.
-            # The evaluator needs an explicit frame per response; reusing a
-            # global section frame would silently change moments.
-            # C5 therefore does not run B numerical solver until the scoped
-            # station-frame projection is supplied as a separate C5 input.
-            issues.append("NUMERIC_PMM_FRAME_SOURCE_NOT_PRESENT_IN_EVALUATOR")
+            for row in first.records:
+                frame=frames.get(row.key)
+                if frame is None or row.source_evidence_id not in evidence_ids:
+                    issues.append("PMM_SOURCE_FRAME_OR_EVIDENCE_MISSING")
+                    continue
+                numeric_problem=SectionCapacityProblem(
+                    trial.target_candidate.cage.section,
+                    RadialCapacityAtAxialForce(row.n_compression,
+                                               row.local_action.m2,row.local_action.m3),
+                    problem.numerical_policy,
+                    FrameModelContract(frame,AxialSignConvention.F1_COMPRESSION_POSITIVE,
+                                       "SECTION_GEOMETRIC_CENTROID"),
+                    problem.input_evidence)
+                observed=SectionSolver().calculate(numeric_problem)
+                utilization=None
+                if observed.status==SectionStatus.COMPLETE_RADIAL:
+                    utilization=hypot(row.local_action.m2.as_nmm,
+                                      row.local_action.m3.as_nmm)/observed.radial_capacity.as_nmm
+                    issues.append("SAMPLED_RADIAL_CAPACITY_NOT_CODE_CERTIFIED")
+                else:
+                    issues.append("PMM_NUMERIC_UNRESOLVED:"+observed.status.value)
+                observations.append(PMMObservation(row.key,observed,utilization))
         for check in problem.required_checks:
             expect=check.expected_keys
             completed=()

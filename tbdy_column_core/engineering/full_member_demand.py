@@ -93,7 +93,15 @@ class MemberDemandOutcome:
     status: MemberDemandStatus
     second_order_approved: bool = False
     full_column_pass: bool = False
+    station_frames: tuple[tuple[ResponseKey,LocalFrame], ...] = ()
     def __post_init__(self):
+        if type(self.station_frames) is not tuple or any(
+                type(row) is not tuple or len(row)!=2 or
+                type(row[0]) is not ResponseKey or type(row[1]) is not LocalFrame
+                for row in self.station_frames):
+            raise TypeError("immutable typed response-specific frames required")
+        if len({x[0] for x in self.station_frames})!=len(self.station_frames):
+            raise ValueError("duplicate target frame mapping")
         if self.second_order_approved or self.full_column_pass:
             raise ValueError("C4 must not claim amplified code-approved actions")
         if type(self.status) is not MemberDemandStatus:
@@ -149,4 +157,6 @@ class FullMemberDemandCompiler:
                 else MemberDemandStatus.FIRST_ORDER_PARTIAL if raw.status==DemandCompileStatus.INCOMPLETE_SOURCE
                 else MemberDemandStatus.FIRST_ORDER_ONLY)
         return MemberDemandOutcome(raw,tuple(available),tuple(problem.expected_effect_branches),
-                                   missing,tuple(dict.fromkeys(issues)),status)
+                                   missing,tuple(dict.fromkeys(issues)),status,
+                                   station_frames=tuple((x.key,x.target_frame)
+                                                        for x in first.station_bindings))
