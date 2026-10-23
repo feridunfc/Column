@@ -42,7 +42,7 @@ class C1DemandTests(unittest.TestCase):
                          Moment.nmm(0),Moment.nmm(0),Moment.nmm(0))
         dem=SignedMemberDemand(k,act,source_frame,e)
         self.pop=MemberDemandPopulation(self.member.ref,(k,),(dem,))
-        geom=StationGeometry(s,L(0),L(0),L(0),self.member.bottom,"target",L(1))
+        geom=StationGeometry(s,L(0),L(0),L(0),self.member.bottom,"target",L(.001))
         bind=StationDemandBinding(k,"row01",geom,frame,"target")
         source=SourceMetadata("ETABS_OFFLINE","table_archive","signed_members",
                               ResponseSemantics.SIGNED_STATIC)
@@ -56,7 +56,8 @@ class C1DemandTests(unittest.TestCase):
         self.problem=MemberDemandCompileProblem(
             self.member,self.candidate,self.pop,(bind,),
             AnalysisBundle((RoleBinding("COLUMN_DEMAND",run),)),
-            self.role,EvidenceCatalog((proof,),()),AxialSignConvention.F1_COMPRESSION_POSITIVE)
+            self.role,EvidenceCatalog((proof,),()),AxialSignConvention.F1_COMPRESSION_POSITIVE,
+            self.p.numerical_policy)
 
     def test_qualified_signed_transfer_includes_r_cross_f(self):
         out=MemberDemandCompiler.compile(self.problem)
@@ -76,7 +77,7 @@ class C1DemandTests(unittest.TestCase):
                    reference_face_id="TOP",physical_role="TOP")
         k2=replace(p.population.expected_keys[0],station=s2)
         geom2=StationGeometry(s2,L(3000),L(3000),L(3000),
-                              self.member.top,"target",L(1))
+                              self.member.top,"target",L(.001))
         frame2=replace(self.p.frame_model_contract.frame,origin=self.member.top)
         b2=StationDemandBinding(k2,"row02",geom2,frame2,"target")
         full_pop=MemberDemandPopulation(self.member.ref,
@@ -124,6 +125,14 @@ class C1DemandTests(unittest.TestCase):
         out=MemberDemandCompiler.compile(replace(self.problem,station_bindings=(altered,)))
         self.assertEqual(out.status,DemandCompileStatus.INVALID_STATION_MAPPING)
         self.assertIn("WRONG_BOTTOM_FACE",out.issues[0])
+
+    def test_station_matching_tolerance_cannot_exceed_numerical_policy(self):
+        L=Length.mm
+        binding=self.problem.station_bindings[0]
+        off_axis=replace(binding.geometry,position=Point3D(L(500),L(0),L(0)),
+                         matching_tol=L(1e6))
+        with self.assertRaises(ValueError):
+            replace(self.problem,station_bindings=(replace(binding,geometry=off_axis),))
 
     def test_tension_positive_external_sign_is_applied_once(self):
         out=MemberDemandCompiler.compile(replace(

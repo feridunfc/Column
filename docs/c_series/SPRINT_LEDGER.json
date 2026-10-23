@@ -350,5 +350,19 @@
   "owner_test_mode": "DEFERRED_UNTIL_FINAL_STAGE",
   "supervisor_review_mode": "NOT_STARTED",
   "merge_authorization": "HOLD",
-  "latest_candidate_source_head": "d0390ba3c105d4c6fa17645c999e031537b762ad"
+  "latest_candidate_source_head": "d0390ba3c105d4c6fa17645c999e031537b762ad",
+  "validation_corrections": [
+    {
+      "date": "2026-10-23",
+      "source": "user-provided independent repository audit; not an independent Supervisor disposition",
+      "audited_head": "1a4b6ffa05e69f929248ceb1956af9a0ce33098c",
+      "environment": "Linux, Python 3.12",
+      "command": "python -B -m unittest discover -s tests -v",
+      "reported_result": "104 tests passed",
+      "architecture_contract": "PASS",
+      "windows_python_3_13_and_github_actions": "NOT_OBSERVED",
+      "disposition": "CHANGES_REQUIRED",
+      "note": "Historical sprint status entries are retained; this correction records later evidence without rewriting the original authoring-time state."
+    }
+  ]
 }

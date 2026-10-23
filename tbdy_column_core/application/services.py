@@ -15,5 +15,5 @@ from .validation import (
     ValidationStatus,SectionInputValidation,ValidatedSectionOutcome,
 )
 
-# C6 provisional entry point; no normative suitability decision.
-from .column_check import CheckRequest,ColumnResult,check_column
+# C6 orchestration remains a draft module while C-02 is not ratified.
+# Do not re-export check_column from the v1.3.1 public services boundary.

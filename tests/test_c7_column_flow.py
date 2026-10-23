@@ -12,6 +12,7 @@ from tbdy_column_core.domain.identity import RevisionRef,RuleRef
 from tbdy_column_core.domain.scenario import DesignScenario,TrialContext
 from tbdy_column_core.domain.stations import StepKind
 from tbdy_column_core.domain.coordinates import transform_action
+from tbdy_column_core.domain.quantities import Moment
 from tbdy_column_core.engineering.member_mechanics import MemberGeometryProblem
 from tbdy_column_core.engineering.stability import BendingAxis,EffectScale
 from tbdy_column_core.engineering.full_member_demand import (
@@ -87,6 +88,21 @@ class C7ColumnIntegration(unittest.TestCase):
         self.assertNotIn("Infinity",column_json(result))
         self.assertIn("NOT_EVALUATED",column_html(result))
         self.assertEqual(len(a["pmm_numerical_observations"]),1)
+
+    def test_observed_utilization_exceedance_is_visible_without_normative_fail(self):
+        first=self.request.demand_problem.first_order
+        row=first.population.supplied[0]
+        stressed=replace(row,action=replace(row.action,m2=Moment.nmm(1e10)))
+        first=replace(first,population=replace(first.population,supplied=(stressed,)))
+        demand_problem=replace(self.request.demand_problem,first_order=first)
+        result=check_column(replace(self.request,demand_problem=demand_problem))
+        self.assertGreater(result.assessment.observations[0].radial_utilization_observed,1.0)
+        self.assertFalse(result.assessment.has_failures)
+        self.assertIn("OBSERVED_UTILIZATION_EXCEEDS_UNITY",result.issues)
+        payload=column_payload(result)
+        self.assertTrue(payload["observed_utilization_exceeds_unity"])
+        self.assertTrue(all(c.compliance.value=="NOT_EVALUATED"
+                            for c in result.assessment.checks))
 
     def test_stale_trial_rejected_before_evaluation(self):
         stale=replace(self.trial,ref=RevisionRef("trial","t","r2"))

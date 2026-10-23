@@ -154,6 +154,8 @@ class ColumnEvaluator:
                     utilization=hypot(row.local_action.m2.as_nmm,
                                       row.local_action.m3.as_nmm)/observed.radial_capacity.as_nmm
                     issues.append("SAMPLED_RADIAL_CAPACITY_NOT_CODE_CERTIFIED")
+                    if utilization>1.0:
+                        issues.append("OBSERVED_UTILIZATION_EXCEEDS_UNITY")
                 else:
                     issues.append("PMM_NUMERIC_UNRESOLVED:"+observed.status.value)
                 observations.append(PMMObservation(row.key,observed,utilization))

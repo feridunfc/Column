@@ -94,3 +94,13 @@ NEXT SPRINT PRECONDITIONS:
 - **Teslim:** `C8_SUPERVISOR_BATCH_REVIEW.md`, `OPEN_FINDINGS.md`, `SUPERVISOR_BATCH_HANDOFF.md`, C-01…C-32 matrisi, toplam kod diff'i ve test runbook'u.
 - **TESTLER:** kullanıcı özellikle C8 sonrası toplu koşu istediğinden bu uygulama safhasında **YÜRÜTÜLMEDİ**. GitHub'un branch push ile otomatik iş yürütmesi, bağımsız Supervisor veya owner talep ettiği toplu testle eş tutulmaz.
 - **Kabul:** `SUPERVISOR_NOT_STARTED` / `MERGE_HOLD` / `B9-F02/F03_OPEN` / `C-02_NOT_RATIFIED`.
+
+ 
+## 2026-10-23 — CORRECTION: post-handoff independent audit evidence
+
+- **Audited HEAD:** `1a4b6ffa05e69f929248ceb1956af9a0ce33098c` (pre-revision candidate).
+- **Provenance:** user-supplied independent repository audit; not a Supervisor disposition.
+- **Environment/command:** Linux, Python 3.12; `python -B -m unittest discover -s tests -v`.
+- **Reported result:** 104 tests passed; `tools/check_architecture_contract.py` passed.
+- **Not observed:** Windows, Python 3.13 and GitHub Actions acceptance for this exact audit.
+- **Disposition:** `CHANGES_REQUIRED`; T1/T2 and further findings remain open until a subsequent exact-HEAD run and review. Historical `IMPLEMENTED_UNTESTED` entries above describe their original authoring time and are not silently rewritten.

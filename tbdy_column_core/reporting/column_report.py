@@ -25,6 +25,9 @@ def column_payload(result:ColumnResult)->dict:
       "eligibility":result.assessment.eligibility.value,
       "is_complete":result.assessment.is_complete,
       "has_failures":result.assessment.has_failures,
+      "observed_utilization_exceeds_unity":any(
+        x.radial_utilization_observed is not None and x.radial_utilization_observed>1.0
+        for x in result.assessment.observations),
       "geometry":{
         "bottom_mm":list(result.geometry.bottom.mm),
         "top_mm":list(result.geometry.top.mm),
