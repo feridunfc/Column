@@ -1,0 +1,267 @@
+{
+  "schema": "column.c_series_sprint_ledger.v1",
+  "constitution_release": "COLUMN-OOP-1.3.1-20261022",
+  "source_main_head": "9269a00f5f5471ab68413c039912cafb2cf4db39",
+  "c_candidate_baseline": "7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
+  "c_branch": "worker/v132-c1-member-demand-20261023",
+  "owner_directive": "2026-10-23: move to C, log each sprint; one consolidated Supervisor patch at end",
+  "change_control": {
+    "c02_request": "docs/c_series/CHANGE_REQUEST_C02_C_SCOPE.md",
+    "state": "PROPOSED_NOT_RATIFIED",
+    "canonical_docs_unchanged": true,
+    "existing_supervisor_g0_g1_g2": "PENDING",
+    "accepted_ab": false
+  },
+  "product_release": "HOLD",
+  "open_findings": [
+    {
+      "id": "B9-F02",
+      "status": "OPEN",
+      "note": "global axial-root qualification and model jump treatment not independently accepted"
+    },
+    {
+      "id": "B9-F03",
+      "status": "OPEN",
+      "note": "1,000 Nmm angular error budget remains unresolved; 288-angle partial envelope"
+    },
+    {
+      "id": "C02-SCOPE",
+      "status": "OPEN",
+      "note": "v1.3.1 C-03/AGENTS explicitly restrict implementation to A0/A/B; versioned C stage change requested"
+    }
+  ],
+  "sprints": [
+    {
+      "id": "C0",
+      "title": "Fiziksel kolon + tam cage",
+      "constitution_clauses": [
+        "C-07",
+        "C-10",
+        "C-16",
+        "C-17",
+        "C-22"
+      ],
+      "scope_key": "PHYSICAL_CAGE",
+      "status": "TESTED_DRAFT",
+      "deliverable": "PhysicalColumn/ColumnCandidate/RebarCage, gerçek bar-tie-crosstie ve bölgeler; uç referansları, revizyon ve eksiksiz enine nüfus",
+      "required_negative_evidence": "Enine bölgede boşluk/çakışma, sahte çiroz referansı, aday revizyonu değişmeden mutasyon reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [
+        "B9-F02 global root qualification remains open",
+        "B9-F03 angular precision remains open",
+        "C-02 scope update not ratified"
+      ],
+      "source_branch": "worker/v131-c0-physical-cage-draft-20261023",
+      "origin_head": "c3cf84fb39d6928b7bb069683945e0fa53f13787",
+      "integrated_candidate_head": "7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
+      "files": [
+        "tbdy_column_core/domain/member_models.py",
+        "tests/test_c0_member_contracts.py",
+        "SPRINT_C0_MEMBER_CAGE_CONTRACTS.md"
+      ],
+      "evidence": [
+        "tests/test_c0_member_contracts.py (6 tests included in C1 suite)",
+        "https://github.com/feridunfc/Column/actions/runs/39939776094"
+      ]
+    },
+    {
+      "id": "C1",
+      "title": "Kaynak bağlı birinci mertebe talepler",
+      "constitution_clauses": [
+        "C-10",
+        "C-11",
+        "C-12",
+        "C-13",
+        "C-14",
+        "C-15",
+        "C-21"
+      ],
+      "scope_key": "SIGNED_DEMAND",
+      "status": "TESTED_DRAFT",
+      "deliverable": "Beklenen ResponseKey ve kaynak satırı nüfusu; imzalı altı etki; r×F; nitelendirme; I/J-fiziksel uç ayrımı",
+      "required_negative_evidence": "Eksik sonuç satırı, yanlış run/generation/role, sahte kanıt, zarf vektörü ve yanlış yüz eşlemesi reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [
+        "Only source-bound signed first-order STATIC responses supported",
+        "No complete MemberMechanics outcome, second-order or code PASS",
+        "C-02 scope update not ratified"
+      ],
+      "source_branch": "worker/v132-c1-member-demand-20261023",
+      "origin_head": "7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
+      "integrated_candidate_head": "7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
+      "files": [
+        "tbdy_column_core/engineering/member_demand.py",
+        "tests/test_c1_member_demand.py",
+        "SPRINT_C1_MEMBER_DEMAND_CANDIDATE.md"
+      ],
+      "evidence": [
+        "C1 HEAD 7bb5f92fd47e048a4446e6e749b2531fdb3c4cfc",
+        "https://github.com/feridunfc/Column/actions/runs/39939776094",
+        "85 tests per matrix cell; 4 of 4 cells passed"
+      ]
+    },
+    {
+      "id": "C2",
+      "title": "Scenario / Trial / MemberMechanics.geometry",
+      "constitution_clauses": [
+        "C-05",
+        "C-07",
+        "C-10",
+        "C-16",
+        "C-21",
+        "C-22"
+      ],
+      "scope_key": "MEMBER_GEOMETRY",
+      "status": "PLANNED",
+      "deliverable": "Değişmez DesignScenario ve TrialContext; gerçek fiziksel uç/yüz; merkez/net/serbest/etkin uzunluk ayrı kaynaklar; prepare_geometry ara çıktısı",
+      "required_negative_evidence": "Kat yüksekliğinden net boy üretme, I/J ile alt/üst takası, eksik boyu 0 veya L ile doldurma reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    },
+    {
+      "id": "C3",
+      "title": "Stiffness + stability / second-order basis",
+      "constitution_clauses": [
+        "C-08",
+        "C-09",
+        "C-12",
+        "C-14",
+        "C-21",
+        "C-23"
+      ],
+      "scope_key": "MECHANICS_STABILITY",
+      "status": "PLANNED",
+      "deliverable": "MemberMechanics.prepare_stiffness ve resolve; açık yön, run ve yöntem; EI modeli ve P-Delta/local P-delta etkisi için kaynak kanıtları",
+      "required_negative_evidence": "Kanıtsız EI/k uç koşulu, atlanan veya iki kez uygulanan 2. mertebe, hedef kolonla tüm katın temsil edilmesi reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    },
+    {
+      "id": "C4",
+      "title": "MemberDemandCompiler tam nüfus ve etki izleri",
+      "constitution_clauses": [
+        "C-10",
+        "C-11",
+        "C-12",
+        "C-14",
+        "C-15",
+        "C-21"
+      ],
+      "scope_key": "DEMAND_COMPILATION",
+      "status": "PLANNED",
+      "deliverable": "Anayasa C-21 imzasına uyumlu scenario/trial/mechanics outcome; kaynaklar, türetilmiş dal ve iki mertebe kapsamı; kombinasyon/step istasyon nüfusu",
+      "required_negative_evidence": "Case/step ve farklı kaynak runlarını gizli birleştirme; modal/zarfı eşzamanlı imzalı sayma; eksik dalı silme reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    },
+    {
+      "id": "C5",
+      "title": "ColumnEvaluator + kontrol kapsamı",
+      "constitution_clauses": [
+        "C-15",
+        "C-17",
+        "C-19",
+        "C-20",
+        "C-21",
+        "C-24",
+        "C-29"
+      ],
+      "scope_key": "CANDIDATE_EVALUATION",
+      "status": "PLANNED",
+      "deliverable": "Açık demands_outcome ile CandidateResult; bağımsız geometri kontrolleri, yalnız kanıtlı TS500/TBDY kesit kontrolleri; C-24 başlıkları ve source-linked sonuç",
+      "required_negative_evidence": "Numerical unresolved kapasiteyi PASS sayma, boş beklenen nüfus=PASS, etki olmadan PMM/second-order kontrol tamamlanmış gösterme reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    },
+    {
+      "id": "C6",
+      "title": "Public check_column ve tek ColumnResult",
+      "constitution_clauses": [
+        "C-05",
+        "C-21",
+        "C-22",
+        "C-24",
+        "C-25",
+        "C-28"
+      ],
+      "scope_key": "PUBLIC_CHECK_COLUMN",
+      "status": "PLANNED",
+      "deliverable": "CheckRequest + sabit aday; açık evaluation akışı; tek immutable ColumnResult JSON/HTML; D/E henüz yoksa eksik kontrol kaydı",
+      "required_negative_evidence": "Design aramasını gizlice başlatma; D/E kapsamını yapılan gösterme; kısmi kapsamdan ELIGIBLE/PASS üretme reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    },
+    {
+      "id": "C7",
+      "title": "Bağımsız kanıt ve kapanış matrisi",
+      "constitution_clauses": [
+        "C-01",
+        "C-02",
+        "C-20",
+        "C-28",
+        "C-29",
+        "C-30",
+        "C-32"
+      ],
+      "scope_key": "ACCEPTANCE_PREP",
+      "status": "PLANNED",
+      "deliverable": "Analitik ve bağımsız sayısal oracle; sınır/negatif senaryolar; dosya+CI kanıtları; C-01…C-32 ve C sprint kapsam matrisi",
+      "required_negative_evidence": "Test sonucu = normatif onay; üretim değerini oraclea kopyalama; drift'i belge silerek saklama reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    },
+    {
+      "id": "C8",
+      "title": "Supervisor toplu patch/disposition",
+      "constitution_clauses": [
+        "C-01",
+        "C-02",
+        "C-03",
+        "C-29",
+        "C-31",
+        "C-32"
+      ],
+      "scope_key": "SUPERVISOR_BATCH",
+      "status": "PLANNED",
+      "deliverable": "Sabitleştirilmiş son HEAD/tree, tüm sprint commit/diff/kanıt ve açık bulgular; Supervisor ayrı inceleme, C-02 sürüm kararı ve G0/G1/G2 durumu",
+      "required_negative_evidence": "Worker self-acceptance, kaynak hash değiştirerek PASS, açık VIOLATION veya UNVERIFIED ile release reddi",
+      "supervisor_disposition": "PENDING",
+      "issues": [],
+      "source_branch": null,
+      "origin_head": null,
+      "integrated_candidate_head": null,
+      "files": [],
+      "evidence": []
+    }
+  ]
+}
