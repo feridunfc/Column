@@ -59,3 +59,10 @@ NEXT SPRINT PRECONDITIONS:
 - **Kod:** `engineering/stability.py` gerçek source-bound EI, x2/x3 ve GLOBAL_P_DELTA/LOCAL_P_DELTA yöntem-kanıt-id ve tam kat üye nüfusu; `MemberMechanics.prepare_stiffness/resolve` başvuruları.
 - **Koruma:** kanıtsız/eksik EI, eksik kat nüfusu, eksik veya uyuşmayan second-order run ve yöntem açık issue; sonuç `DEPENDENCY_DECLARED_UNRESOLVED`. Hesaplanmış ikinci mertebe/TS500 uygunluğu iddiası yok.
 - **TESTS:** sahibi C8 sonrasına erteledi; **BU SPRINT TEST EDİLMEDİ**. Supervisor PENDING, CR-C02 açık.
+
+## 2026-10-23 — C4: kaynak ve etki dallarının birleştirilmesi — IMPLEMENTED_UNTESTED
+
+- **BASE:** `46c4ff91ac648a26c6375ca3330f3d4b0a3eff67`; `engineering/full_member_demand.py` eklendi.
+- **Kod:** ilk mertebe C1 `MemberDemandCompiler` çıktısı aynen korunur. Beklenen P-Delta/P-delta eksen ve yöntem dalları dışarıdan sabit nüfusla gelir; fiziksel kaynak `ResponseKey`, analiz run/generation, `RuleRef`, `EvidenceRef` eşleşmesi zorunludur.
+- **Risk kontrolü:** her kaynaklı altı-vektör kendi koordinat/referansıyla taşınır; birbirinden farklı veya zarf/modal maksimumlarından sahte imzalı vektör üretilmez. Kaynağı doğrulanmamış ikinci mertebe etkisi uygulanmaz ve `second_order_approved=False` kalır.
+- **TESTS:** C8 sonrasına ertelendi; `IMPLEMENTED_UNTESTED`. Supervisor PENDING; B9 ve C-02 açık.

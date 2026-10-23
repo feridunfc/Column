@@ -183,16 +183,25 @@
         "C-21"
       ],
       "scope_key": "DEMAND_COMPILATION",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Anayasa C-21 imzasına uyumlu scenario/trial/mechanics outcome; kaynaklar, türetilmiş dal ve iki mertebe kapsamı; kombinasyon/step istasyon nüfusu",
       "required_negative_evidence": "Case/step ve farklı kaynak runlarını gizli birleştirme; modal/zarfı eşzamanlı imzalı sayma; eksik dalı silme reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "Second-order action methods not independently qualified; no amplification",
+        "C-02 pending",
+        "B9-F02/F03 open"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/full_member_demand.py"
+      ],
+      "evidence": [
+        "TESTS_DEFERRED_BY_OWNER_UNTIL_C8"
+      ],
+      "base_head": "46c4ff91ac648a26c6375ca3330f3d4b0a3eff67"
     },
     {
       "id": "C5",
