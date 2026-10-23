@@ -33,7 +33,7 @@ class C2ScenarioAndGeometry(unittest.TestCase):
                              "all",L(0),L(3000),L(150),"T1",()),))
         self.candidate=ColumnCandidate(RevisionRef("candidate","C10","r1"),
                                        self.member.ref,cage)
-        source=SourceMetadata("ETABS_OFFLINE","recorded","test","SIGNED_STATIC")
+        source=SourceMetadata("ETABS_OFFLINE","recorded","test",ResponseSemantics.SIGNED_STATIC)
         run=AnalysisRun("run","model","gen","basis",source,("row1",))
         bundle=AnalysisBundle((RoleBinding("DESIGN_FORCES",run),))
         self.scenario=DesignScenario(RevisionRef("scenario","s","r1"),
