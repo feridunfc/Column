@@ -62,20 +62,21 @@ class B7IndependentAcceptanceEvidence(unittest.TestCase):
                 Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
         numeric=assess_three_level_radial_refinement(p)
         self.assertEqual(numeric.counts,(72,144,288))
-        # The discontinuous point-bar replacement convention is now
-        # checked explicitly. This fixed fixture has four axial jump
-        # crossings at 288 sample angles; never relabel partial as full.
+        # The continuous finite-area bar overlap resolves the prior
+        # 288-angle missing-root condition. Angular convergence is still
+        # evaluated against the unchanged 1,000 Nmm budget.
         self.assertEqual(numeric.statuses,(
             SectionStatus.COMPLETE_RADIAL,
             SectionStatus.COMPLETE_RADIAL,
-            SectionStatus.PARTIAL_ENVELOPE))
-        self.assertEqual(numeric.verdict,TripleRefinementStatus.NUMERIC_UNRESOLVED)
-        self.assertTrue(any("AXIAL_JUMP_CROSSES_TARGET" in x
-                            for x in numeric.issues))
+            SectionStatus.COMPLETE_RADIAL))
+        self.assertEqual(numeric.verdict,TripleRefinementStatus.OBSERVED_NOT_STABLE)
+        self.assertFalse(any("AXIAL_DISCONTINUITY_DETECTED" in x
+                             for x in numeric.issues))
         self.assertIsNotNone(numeric.differences_nmm[0])
-        self.assertIsNone(numeric.differences_nmm[1])
-        self.assertEqual(numeric.moment_budgets_nmm,(1000.,None))
+        self.assertIsNotNone(numeric.differences_nmm[1])
+        self.assertEqual(numeric.moment_budgets_nmm,(1000.,1000.))
         self.assertGreater(numeric.differences_nmm[0],1000.)
+        self.assertGreater(numeric.differences_nmm[1],1000.)
         self.assertIn("not a rigorous bound",numeric.interpretation)
         bars,mat=oracle_input(p)
         oracle=radial_capacity_dense_convex(
@@ -84,11 +85,9 @@ class B7IndependentAcceptanceEvidence(unittest.TestCase):
             demand_m3_nmm=20000000.,angle_count=144,
             root_scan_count=160,axial_tolerance_n=1.)
         self.assertEqual(oracle.status,"PROVEN")
-        # 3% is independently established baseline similarity for this
-        # numeric model, NOT the stricter 1000 Nmm convergence budget.
-        # 144-angle sampled value is still present. The 288-angle
-        # value is intentionally withheld due to root ambiguity.
-        self.assertIsNone(numeric.capacity_nmm[-1])
+        # 3% is an independent baseline-similarity check, not the stricter
+        # 1,000 Nmm convergence budget.
+        self.assertIsNotNone(numeric.capacity_nmm[-1])
         self.assertAlmostEqual(numeric.capacity_nmm[1],oracle.capacity_nmm,
                                delta=.03*oracle.capacity_nmm)
 
