@@ -62,13 +62,20 @@ class B7IndependentAcceptanceEvidence(unittest.TestCase):
                 Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
         numeric=assess_three_level_radial_refinement(p)
         self.assertEqual(numeric.counts,(72,144,288))
-        self.assertTrue(all(x==SectionStatus.COMPLETE_RADIAL
-                            for x in numeric.statuses),numeric.issues[:5])
-        self.assertTrue(all(d>=0 for d in numeric.differences_nmm))
-        self.assertEqual(numeric.moment_budgets_nmm,(1000.,1000.))
-        self.assertIn(numeric.verdict,(
-            TripleRefinementStatus.OBSERVED_STABLE_AT_BOTH_STEPS,
-            TripleRefinementStatus.OBSERVED_NOT_STABLE))
+        # The discontinuous point-bar replacement convention is now
+        # checked explicitly. This fixed fixture has four axial jump
+        # crossings at 288 sample angles; never relabel partial as full.
+        self.assertEqual(numeric.statuses,(
+            SectionStatus.COMPLETE_RADIAL,
+            SectionStatus.COMPLETE_RADIAL,
+            SectionStatus.PARTIAL_ENVELOPE))
+        self.assertEqual(numeric.verdict,TripleRefinementStatus.NUMERIC_UNRESOLVED)
+        self.assertTrue(any("AXIAL_JUMP_CROSSES_TARGET" in x
+                            for x in numeric.issues))
+        self.assertIsNotNone(numeric.differences_nmm[0])
+        self.assertIsNone(numeric.differences_nmm[1])
+        self.assertEqual(numeric.moment_budgets_nmm,(1000.,None))
+        self.assertGreater(numeric.differences_nmm[0],1000.)
         self.assertIn("not a rigorous bound",numeric.interpretation)
         bars,mat=oracle_input(p)
         oracle=radial_capacity_dense_convex(
@@ -79,7 +86,10 @@ class B7IndependentAcceptanceEvidence(unittest.TestCase):
         self.assertEqual(oracle.status,"PROVEN")
         # 3% is independently established baseline similarity for this
         # numeric model, NOT the stricter 1000 Nmm convergence budget.
-        self.assertAlmostEqual(numeric.capacity_nmm[-1],oracle.capacity_nmm,
+        # 144-angle sampled value is still present. The 288-angle
+        # value is intentionally withheld due to root ambiguity.
+        self.assertIsNone(numeric.capacity_nmm[-1])
+        self.assertAlmostEqual(numeric.capacity_nmm[1],oracle.capacity_nmm,
                                delta=.03*oracle.capacity_nmm)
 
     def test_failure_at_one_angle_keeps_other_angles_and_report_truth(self):

@@ -139,12 +139,20 @@ class SectionB1Tests(unittest.TestCase):
                 request=RadialCapacityAtAxialForce(
                     Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
             result=calculate_section(p)
-            self.assertEqual(result.status,SectionStatus.COMPLETE_RADIAL,
-                             result.issues[:4])
-            radii.append(result.radial_capacity.as_nmm)
-            self.assertEqual(len(result.states),count)
+            if count==288:
+                self.assertEqual(result.status,SectionStatus.PARTIAL_ENVELOPE)
+                self.assertEqual(len(result.angular_coverage.missing_indices),4)
+                self.assertTrue(any("AXIAL_JUMP_CROSSES_TARGET" in x
+                                    for x in result.issues))
+                self.assertIsNone(result.radial_capacity)
+                radii.append(None)
+            else:
+                self.assertEqual(result.status,SectionStatus.COMPLETE_RADIAL,
+                                 result.issues[:4])
+                radii.append(result.radial_capacity.as_nmm)
+                self.assertEqual(len(result.states),count)
             self.assertFalse(result.full_column_design_pass)
-        self.assertLess(abs(radii[1]-radii[2]),.03*radii[2])
+        self.assertLess(abs(radii[0]-radii[1]),.03*radii[1])
         p=fixture_problem(layout="B")
         bars,material=oracle_fixture(p)
         oracle=radial_capacity_dense_convex(
@@ -153,7 +161,7 @@ class SectionB1Tests(unittest.TestCase):
             angle_count=144,root_scan_count=160,axial_tolerance_n=1,
         )
         self.assertEqual(oracle.status,"PROVEN")
-        self.assertAlmostEqual(radii[2],oracle.capacity_nmm,
+        self.assertAlmostEqual(radii[1],oracle.capacity_nmm,
                                delta=.03*oracle.capacity_nmm)
 
     def test_zero_moment_no_infinite_capacity(self):
