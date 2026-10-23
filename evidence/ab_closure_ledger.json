@@ -1,0 +1,537 @@
+{
+  "schema": "column.ab.closure-ledger.v1",
+  "code_anchor_sha": "ce75e58f7c07f37df02e39ac0cff9b2f6bae2f35",
+  "constitution_version": "1.3.1",
+  "supervisor_disposition": "NOT_REVIEWED_INDEPENDENTLY",
+  "release_gate": "HOLD",
+  "c02_process_status": "OPEN_UNRATIFIED",
+  "numerical_scope": "provided-cage rectangular-section-only",
+  "claims": {
+    "code_approval": false,
+    "continuous_root_uniqueness_certified": false,
+    "angular_error_bound_certified": false,
+    "complete_column_design": false
+  },
+  "constitution_rows": [
+    {
+      "id": "C-01",
+      "name": "Tek bağlayıcı mimari",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "COLUMN_WORKER_AB.md",
+        "SPRINT_B1_C02_CHANGE_RECORD.md"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-02",
+      "name": "Yüzde yüz uyum ve kontrollü değişiklik",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "COLUMN_WORKER_AB.md",
+        "SPRINT_B1_C02_CHANGE_RECORD.md"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-03",
+      "name": "Etkin uygulama sınırı",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-04",
+      "name": "Modüler tek ürün",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-05",
+      "name": "Dört ayrı model ve üç kullanım",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-06",
+      "name": "OOP ve veri sahipliği",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-07",
+      "name": "Değişmezlik, revizyon ve bağımlılık",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_input_fingerprint.py",
+        "tbdy_column_core/engineering/input_identity.py"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-08",
+      "name": "Kanonik miktarlar",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-09",
+      "name": "Boyutlu sayısal politika",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-10",
+      "name": "Koordinat, işaret, referans ve boy",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-11",
+      "name": "İstasyon kimliği, geometri ve tepki anahtarı",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-12",
+      "name": "Analiz rolleri ve tepki anlamı",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-13",
+      "name": "Kaynağın dört ayrı boyutu",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-14",
+      "name": "Kapsama bağlı nitelendirme",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-15",
+      "name": "Bilgi durumları",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_column_contracts.py",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-16",
+      "name": "Fiziksel modelin nesneleri",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-17",
+      "name": "Kesit, donatı ve yerleşim",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py",
+        "tbdy_column_core/engineering/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-18",
+      "name": "Malzeme ve destek sınırı",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py",
+        "tbdy_column_core/engineering/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-19",
+      "name": "Kesit isteği ve public sözleşme",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py",
+        "tbdy_column_core/engineering/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-20",
+      "name": "Kernel uyarlaması ve gerçek sayısal kalite",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py",
+        "tbdy_column_core/engineering/"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-21",
+      "name": "Üye mekaniği ve talep üretimi",
+      "worker_assessment": "PRESERVED_DEFERRED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B implementation deferred by C-31; target contracts are preserved"
+    },
+    {
+      "id": "C-22",
+      "name": "Senaryo, aday ve deneme",
+      "worker_assessment": "PRESERVED_DEFERRED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B implementation deferred by C-31; target contracts are preserved"
+    },
+    {
+      "id": "C-23",
+      "name": "Kat ve birleşim sahipliği",
+      "worker_assessment": "PRESERVED_DEFERRED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B implementation deferred by C-31; target contracts are preserved"
+    },
+    {
+      "id": "C-24",
+      "name": "Sonuç, kapsam ve uygun aday seçimi",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-25",
+      "name": "Tasarım çevrimi ve kapanış",
+      "worker_assessment": "PRESERVED_DEFERRED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B implementation deferred by C-31; target contracts are preserved"
+    },
+    {
+      "id": "C-26",
+      "name": "Yeniden hesaplama ve kalıcı veri",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tests/test_input_fingerprint.py",
+        "tbdy_column_core/engineering/input_identity.py"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-27",
+      "name": "Native sınırı",
+      "worker_assessment": "PRESERVED_DEFERRED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "tbdy_column_core/domain/"
+      ],
+      "assessment_scope": "A/B implementation deferred by C-31; target contracts are preserved"
+    },
+    {
+      "id": "C-28",
+      "name": "Aynı sonuçtan rapor",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tbdy_column_core/reporting/section_report.py",
+        "tests/test_section_pilot.py"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-29",
+      "name": "Bağımsız sayısal kabul",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py",
+        "tbdy_column_core/engineering/"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-30",
+      "name": "Geçiş ve geçmişin korunması",
+      "worker_assessment": "SATISFIED",
+      "evidence_paths": [
+        "tbdy_column_core/physics/section_capacity.py",
+        "tests/independent/oracle.py"
+      ],
+      "assessment_scope": "Candidate A/B implementation/test evidence; not Supervisor acceptance"
+    },
+    {
+      "id": "C-31",
+      "name": "Adımlar ve tamamlanma",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "COLUMN_WORKER_AB.md",
+        "SPRINT_B1_C02_CHANGE_RECORD.md"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    },
+    {
+      "id": "C-32",
+      "name": "Worker/Supervisor kapıları ve sapma",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "COLUMN_CONSTITUTION.md",
+        "COLUMN_WORKER_AB.md",
+        "SPRINT_B1_C02_CHANGE_RECORD.md"
+      ],
+      "assessment_scope": "A/B mandatory issue or independent review evidence remains open"
+    }
+  ],
+  "acceptance_rows": [
+    {
+      "id": "AB-01",
+      "name": "units dimensional arithmetic",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-02",
+      "name": "invalid units, values and policy",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-03",
+      "name": "coordinate rotation and r cross F",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-04",
+      "name": "station/face response identities",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-05",
+      "name": "run/role/source semantic qualification",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-06",
+      "name": "evidence producer/role scope",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-07",
+      "name": "geometry, cover, overlap",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-08",
+      "name": "steel laws and unsupported mix",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-09",
+      "name": "two cages at three strain states",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-10",
+      "name": "bar order and two cages independent",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-11",
+      "name": "fixed N root source, residual, tolerance",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-12",
+      "name": "72/144/288 angular and oracle",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py"
+      ],
+      "commentary": "CI tests exist, but threshold justification and/or independent G0/G1/G2 acceptance is not complete"
+    },
+    {
+      "id": "AB-13",
+      "name": "zero direction / partial / unresolved",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-14",
+      "name": "independent outcomes retained without PASS",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_section_pilot.py",
+        "tests/test_b7_oracle_matrix.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-15",
+      "name": "same-result JSON HTML strict finite",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-16",
+      "name": "public facade, second valid section",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-17",
+      "name": "import boundary, immutable contracts",
+      "worker_assessment": "CI_EVIDENCE_PRESENT",
+      "evidence_paths": [
+        "tests/test_column_contracts.py"
+      ],
+      "commentary": "Named CI tests observed; independent acceptance still required"
+    },
+    {
+      "id": "AB-18",
+      "name": "legacy numerical kernel regression and CI",
+      "worker_assessment": "UNVERIFIED",
+      "evidence_paths": [
+        "tests/test_architecture_contract.py",
+        "tests/independent/oracle.py"
+      ],
+      "commentary": "CI tests exist, but threshold justification and/or independent G0/G1/G2 acceptance is not complete"
+    }
+  ],
+  "open_findings": [
+    {
+      "id": "FND-B8-01",
+      "severity": "BLOCKER",
+      "code": "C-02/C-32",
+      "description": "Independent Supervisor acceptance and C-02 amendment not ratified"
+    },
+    {
+      "id": "FND-B8-02",
+      "severity": "BLOCKER",
+      "code": "C-20/AB-12",
+      "description": "Sampled root uniqueness and rigorous angular numerical acceptability remain unproven"
+    },
+    {
+      "id": "FND-B8-03",
+      "severity": "REVIEW",
+      "code": "C-13/C-14",
+      "description": "Source role/method/consumer proof and source dimensions require full independent semantic review"
+    }
+  ]
+}
