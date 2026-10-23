@@ -1,0 +1,65 @@
+catalog_id: COLUMN-RULE-CATALOG
+catalog_version: 0.1.0-draft
+constitution:
+  id: COLUMN-OOP-CONSTITUTION
+  version: 1.3.1
+  release_id: COLUMN-OOP-1.3.1-20261022
+  implementation_scope: A0/A/B_ONLY
+  check_column_authorized: false
+  status: DESIGN_ONLY_NOT_RATIFIED
+canonical_units:
+  force: N
+  length: mm
+  moment: Nmm
+  stress: MPa
+status_values:
+  - OK
+  - WARNING
+  - FAIL
+  - NO_DATA
+  - UNRESOLVED
+  - NOT_EVALUATED
+  - NOT_APPLICABLE
+comparison_directions:
+  DEMAND_OVER_CAPACITY:
+    metric: demand / capacity
+    valid_when: capacity > 0
+    comparison: <= 1
+  PROVIDED_OVER_REQUIRED:
+    metric: provided / required
+    valid_when: required > 0
+    comparison: >= 1
+  CONDITION:
+    metric: boolean predicate
+    comparison: true
+  INTERVAL:
+    comparison: lower <= measured <= upper
+  MAXIMUM:
+    comparison: measured <= limit
+  MINIMUM:
+    comparison: measured >= limit
+cards:
+  - id: RC-GEO-001
+    path: cards/RC-GEO-001.yaml
+    implementation_state: SPECIFICATION_ONLY
+  - id: RC-REBAR-LONG-001
+    path: cards/RC-REBAR-LONG-001.yaml
+    implementation_state: SPECIFICATION_ONLY
+  - id: RC-BAR-PLACEMENT-001
+    path: cards/RC-BAR-PLACEMENT-001.yaml
+    implementation_state: GEOMETRY_GATE_ONLY
+  - id: RC-PMM-001
+    path: cards/RC-PMM-001.yaml
+    implementation_state: NOT_EVALUATED
+  - id: RC-SHEAR-TS500-001
+    path: cards/RC-SHEAR-TS500-001.yaml
+    implementation_state: NOT_EVALUATED
+  - id: RC-SHEAR-TBDY-COLUMN-001
+    path: cards/RC-SHEAR-TBDY-COLUMN-001.yaml
+    implementation_state: NOT_EVALUATED
+  - id: RC-CONFINEMENT-TBDY-COLUMN-001
+    path: cards/RC-CONFINEMENT-TBDY-COLUMN-001.yaml
+    implementation_state: NOT_EVALUATED
+  - id: RC-SECOND-ORDER-001
+    path: cards/RC-SECOND-ORDER-001.yaml
+    implementation_state: NOT_EVALUATED

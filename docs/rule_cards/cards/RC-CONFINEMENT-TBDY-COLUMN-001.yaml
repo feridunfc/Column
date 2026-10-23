@@ -1,0 +1,133 @@
+schema_version: "1.0"
+rule_id: RC-CONFINEMENT-TBDY-COLUMN-001
+revision: 1
+title: TBDY 2018 kolon uç sarılma bölgesi ve enine donatı
+category: SEISMIC_CONFINEMENT_DETAILING
+normative_state: SOURCE_TEXT_IDENTIFIED_ENGINEERING_REVIEW_PENDING
+implementation_state: NOT_EVALUATED
+scope:
+  member: RC_COLUMN
+  applies_to: DUCTILITY_LEVEL_HIGH_COLUMN
+  separate_rules_required_for: [LIMITED_DUCTILITY, CIRCULAR_SPIRAL, SHORT_COLUMN]
+normative_basis:
+  - document: TBDY-2018
+    clause: "7.3.4.1(a)-(d)"
+    equations: ["7.1", "7.2"]
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+inputs:
+  - name: l_n
+    type: Length
+    unit: mm
+    required: true
+    evidence: clear_column_height_and_end_region_reference
+  - name: h_max
+    type: Length
+    unit: mm
+    required: true
+  - name: b_min
+    type: Length
+    unit: mm
+    required: true
+  - name: phi_l_min
+    type: Length
+    unit: mm
+    required: true
+  - name: phi_t
+    type: Length
+    unit: mm
+    required: true
+  - name: s
+    type: Length
+    unit: mm
+    required: true
+  - name: N_d
+    type: Force
+    unit: N
+    required: true
+  - name: A_c
+    type: Area
+    unit: mm^2
+    required: true
+  - name: A_ck
+    type: Area
+    unit: mm^2
+    required: true
+  - name: b_k
+    type: Length
+    unit: mm
+    required: true
+  - name: f_ck
+    type: Stress
+    unit: MPa
+    required: true
+  - name: f_ywk
+    type: Stress
+    unit: MPa
+    required: true
+  - name: A_sh_provided
+    type: Area
+    unit: mm^2
+    required: true
+    evidence: tie_leg_count_and_bar_geometry_for_each_direction
+equations:
+  - id: CONFINEMENT_ZONE_LENGTH
+    expression: l_s = max(l_n / 6, 1.5 * h_max, 500 mm)
+    applicability: non_cantilever_column
+    clause: "TBDY 7.3.4.1"
+  - id: CANTILEVER_ZONE_LENGTH
+    expression: l_s = max(2 * h_max, other_applicable_geometric_minima)
+    applicability: cantilever_column
+    clause: "TBDY 7.3.4.1"
+  - id: TRANSVERSE_SPACING_UPPER
+    expression: s <= min(b_min / 3, 6 * phi_l_min, 150 mm)
+    clause: "TBDY 7.3.4.1(a)"
+  - id: TRANSVERSE_SPACING_LOWER
+    expression: s >= 50 mm
+    clause: "TBDY 7.3.4.1(a)"
+  - id: MIN_TRANSVERSE_BAR_DIAMETER
+    expression: phi_t >= 8 mm
+    clause: "TBDY 7.3.4.1(a)"
+  - id: TIE_LEG_HORIZONTAL_SPACING
+    expression: a <= 25 * phi_t
+    clause: "TBDY 7.3.4.1(a)"
+  - id: RECTANGULAR_CONFINEMENT_AREA_1
+    expression: A_sh >= 0.30 * s * b_k * (A_c / A_ck - 1) * (f_ck / f_ywk)
+    applicability: N_d > 0.20 * A_c * f_ck
+    clause: "TBDY 7.3.4.1(b), Eq. (7.1)"
+  - id: RECTANGULAR_CONFINEMENT_AREA_2
+    expression: A_sh >= 0.075 * s * b_k * (f_ck / f_ywk)
+    applicability: N_d > 0.20 * A_c * f_ck
+    clause: "TBDY 7.3.4.1(b), Eq. (7.1)"
+  - id: LOW_AXIAL_FORCE_MINIMUM
+    expression: A_sh_provided >= (2 / 3) * max(A_sh_eq_7_1_condition_1, A_sh_eq_7_1_condition_2)
+    applicability: N_d <= 0.20 * A_c * f_ck
+    clause: "TBDY 7.3.4.1(d)"
+decision:
+  direction: PROVIDED_OVER_REQUIRED
+  metric: A_sh_provided / A_sh_required
+  threshold: 1.0
+  pass_condition: all_spacing_and_geometry_conditions AND A_sh_provided >= A_sh_required
+  status_on_unknown_ductility_level: NO_DATA
+  status_on_unknown_axial_load_state: NO_DATA
+engineering_notes:
+  - Evaluate each principal direction independently using the core dimension b_k for that direction; use the more demanding Eq. (7.1) expression.
+  - A_sh_provided is the area of effective tie legs crossing the relevant direction, not the sum of every bar in the drawing.
+  - Check hook/anchorage, cross-tie restraint, bar lateral support, tie continuity and spacing between tie legs as separate geometry/detailing predicates. Area alone does not prove confinement.
+  - The 7.3.4.1 formulas are not automatically applicable to limited-ductility columns, circular spirals, or short columns; those need their own branch cards.
+  - Verify whether the section's actual tie geometry restrains all required longitudinal bars. A bar-ID list without tie geometry is insufficient evidence.
+required_evidence:
+  - ductility_class_and_system_context
+  - confinement_zone_station_boundaries
+  - core_dimensions_and_core_area
+  - longitudinal_and_transverse_bar_populations
+  - tie_leg_and_crosstie_geometry
+  - axial_force_for_governing_combination
+  - authorized_code_edition_review_receipt
+verification:
+  hand_cases:
+    - "s = 150 mm and all other limits >= 150 mm -> spacing upper bound satisfied."
+    - "s = 150.1 mm -> FAIL when upper bound is 150 mm."
+    - "phi_t = 7.9 mm -> FAIL."
+    - "A_sh provided below either governing Eq. (7.1) requirement -> FAIL."
+    - "Missing tie/crosstie geometry -> NO_DATA for restraint, even if A_sh ratio is adequate."
+  independent_review_required: true

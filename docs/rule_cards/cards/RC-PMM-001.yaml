@@ -1,0 +1,68 @@
+schema_version: "1.0"
+rule_id: RC-PMM-001
+revision: 1
+title: Eksenel kuvvet ve iki eksenli eğilme etkileşimi (N-M2-M3)
+category: STRENGTH
+normative_state: NORMATIVE_METHOD_NOT_YET_PINNED_TO_ACCEPTED_IMPLEMENTATION
+implementation_state: NOT_EVALUATED
+normative_basis:
+  - document: TBDY-2018
+    clause: "7.3.2"
+    equations: ["member end demands must be checked against the applicable axial-force/biaxial-moment resistance surface"]
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+  - document: TS500
+    clause: "Section 7"
+    equations: ["strain compatibility and force equilibrium under the adopted design stress-strain laws"]
+    source: "https://www.yuzyilyapidenetim.com.tr/documents/TS500.pdf"
+    source_quality: ACCESSIBLE_COPY_NOT_AUTHORIZED_EDITION_RECEIPT
+inputs:
+  - name: N_d
+    type: Force
+    unit: N
+    required: true
+  - name: M2_d
+    type: Moment
+    unit: Nmm
+    required: true
+  - name: M3_d
+    type: Moment
+    unit: Nmm
+    required: true
+  - name: resistance_surface
+    type: validated_interaction_surface
+    unit: N_Nmm_Nmm
+    required: true
+    evidence: same_section_material_bar_population_code_method_and_revision
+equations:
+  - id: DEMAND_VECTOR
+    expression: S_d = (N_d, M2_d, M3_d)
+  - id: LOAD_FACTOR
+    expression: lambda_star = sup { lambda >= 0 : lambda * S_d belongs to the accepted resistance domain C }
+    meaning: proportional-load-factor method; use only if explicitly selected and validated for the governing design basis
+  - id: UTILIZATION
+    expression: U = 1 / lambda_star
+    applicability: lambda_star > 0 and the origin-to-demand load path has a unique qualified intersection
+decision:
+  direction: DEMAND_OVER_CAPACITY
+  metric: U
+  threshold: 1.0
+  pass_condition: U <= 1.0
+  status_until_method_accepted: NOT_EVALUATED
+engineering_notes:
+  - Do not approximate biaxial interaction by independently checking M2 and M3 against two uniaxial capacities unless an accepted code method explicitly requires that approximation.
+  - The surface must use the same section revision, actual bar population, concrete/steel laws, sign convention, load combination and design resistance factors as the demand.
+  - A sampled radial section capacity is a numerical observation, not a validated TS500/TBDY member check.
+  - If the intersection is multiple, tangent, missing, or not converged, return UNRESOLVED; do not select the most convenient root.
+required_evidence:
+  - governing_load_combination_and_station
+  - N_M2_M3_demand_with_units_and_signs
+  - section_material_and_bar_revisions
+  - accepted_code_method_and_resistance_surface_revision
+  - root_and_convergence_evidence
+verification:
+  hand_cases:
+    - "Demand point strictly inside a verified surface -> U < 1."
+    - "Demand point on verified boundary -> U = 1 within approved numerical policy."
+    - "Demand outside surface -> U > 1 and FAIL only after normative method is accepted."
+    - "No accepted surface or unresolved intersection -> NOT_EVALUATED or UNRESOLVED, never OK."
+  independent_review_required: true

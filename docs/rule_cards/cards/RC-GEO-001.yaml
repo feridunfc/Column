@@ -1,0 +1,93 @@
+schema_version: "1.0"
+rule_id: RC-GEO-001
+revision: 1
+title: Kolon enkesit boyutu ve eksenel kuvvet için alan yeterliliği
+category: GEOMETRY_AND_SECTION_CAPACITY_PREREQUISITE
+normative_state: SOURCE_TEXT_IDENTIFIED_ENGINEERING_REVIEW_PENDING
+implementation_state: SPECIFICATION_ONLY
+scope:
+  member: RC_COLUMN
+  section_types: [RECTANGULAR, CIRCULAR]
+  load_context: GRAVITY_PLUS_EARTHQUAKE_FOR_TBDY_AREA_CHECK
+normative_basis:
+  - document: TBDY-2018
+    clause: "7.3.1.1"
+    equations: []
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+  - document: TBDY-2018
+    clause: "7.3.1.2"
+    equations: ["Ac >= N_dm / (0.40 f_ck)"]
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+inputs:
+  - name: section_type
+    type: enum
+    unit: null
+    required: true
+    evidence: approved_section_geometry
+  - name: b
+    type: Length
+    unit: mm
+    required: false
+    required_if: section_type == RECTANGULAR
+  - name: h
+    type: Length
+    unit: mm
+    required_if: section_type == RECTANGULAR
+  - name: diameter
+    type: Length
+    unit: mm
+    required: false
+    required_if: section_type == CIRCULAR
+  - name: N_dm
+    type: Force
+    unit: N
+    required: true
+    evidence: governing_G_plus_Q_plus_E_combination_with_TS498_live_load_reduction
+  - name: f_ck
+    type: Stress
+    unit: MPa
+    required: true
+    evidence: concrete_material_revision
+equations:
+  - id: RECTANGULAR_MIN_DIMENSION
+    expression: min(b, h) >= 300 mm
+    symbols:
+      b: rectangular section dimension, local 2
+      h: rectangular section dimension, local 3
+    clause: "TBDY 7.3.1.1"
+  - id: CIRCULAR_MIN_DIAMETER
+    expression: diameter >= 350 mm
+    symbols:
+      diameter: circular column diameter
+    clause: "TBDY 7.3.1.1"
+  - id: AXIAL_FORCE_AREA
+    expression: Ac >= N_dm / (0.40 * f_ck)
+    symbols:
+      Ac: gross concrete section area, mm^2
+      N_dm: governing axial compression, N
+      f_ck: characteristic concrete cylinder strength, MPa = N/mm^2
+    clause: "TBDY 7.3.1.2"
+decision:
+  direction: CONDITION
+  measured_fields: [dimension_condition, axial_area_condition]
+  pass_requires_all: true
+  status_on_missing_load_combination: NO_DATA
+  status_on_unqualified_material_revision: NO_DATA
+  status_on_verified_violation: FAIL
+engineering_notes:
+  - N_dm is not an arbitrary largest absolute axial force; the exact TBDY-defined G+Q+E population and TS 498 live-load reduction must be evidenced.
+  - The dimension gate and axial-area gate must be reported separately so a failed or missing load case cannot be hidden by valid geometry.
+  - This card is a design specification; it is not yet connected to check_column.
+required_evidence:
+  - section_geometry_revision
+  - governing_load_combination_id
+  - load_case_population_receipt
+  - concrete_strength_source_and_revision
+  - calculation_trace_with_units
+verification:
+  hand_cases:
+    - "Rectangular min dimension 299.9 mm -> FAIL when source inputs are qualified."
+    - "Rectangular min dimension 300.0 mm -> dimension condition satisfied."
+    - "N_dm absent -> NO_DATA, never zero."
+    - "Ac exactly N_dm/(0.40 f_ck) -> boundary satisfied within the approved numerical policy."
+  independent_review_required: true
