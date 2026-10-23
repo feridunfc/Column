@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "column-domain-engine"
+version = "0.1.0"
+description = "Typed offline RC column domain and section capacity"
+requires-python = ">=3.12"
