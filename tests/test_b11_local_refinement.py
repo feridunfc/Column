@@ -28,5 +28,7 @@ class LocalRefinementTests(unittest.TestCase):
         p=fixture_problem()
         with self.assertRaises(TypeError):
             assess_local_radial_refinement(p)
+        radial=fixture_problem(layout="B",angle_count=8,
+            request=RadialCapacityAtAxialForce(Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
         with self.assertRaises(ValueError):
-            assess_local_radial_refinement(p,max_added_angles=1)
+            assess_local_radial_refinement(radial,max_added_angles=1)
