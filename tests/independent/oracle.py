@@ -165,6 +165,27 @@ def _integrate_compression_region(
     return area, first_x2, first_x3
 
 
+
+def _circle_halfplane_overlap(
+    bar: OracleBar, *, nx: float, ny: float, q_min: float,
+) -> tuple[float, float, float]:
+    """Independent circular-segment area and first moments in the block."""
+    radius = bar.diameter_mm / 2.0
+    signed = bar.x2_mm * nx + bar.x3_mm * ny - q_min
+    if signed <= -radius:
+        return 0.0, 0.0, 0.0
+    if signed >= radius:
+        return bar.area_mm2, bar.area_mm2 * bar.x2_mm, bar.area_mm2 * bar.x3_mm
+    square = max(0.0, radius * radius - signed * signed)
+    theta = math.acos(max(-1.0, min(1.0, -signed / radius)))
+    cap = radius * radius * theta + signed * math.sqrt(square)
+    area_scale = bar.area_mm2 / (math.pi * radius * radius)
+    area = cap * area_scale
+    centroid_q = ((2.0 / 3.0) * square ** 1.5 * area_scale / area
+                  if area > 0.0 else 0.0)
+    return area, area * (bar.x2_mm + centroid_q * nx), area * (bar.x3_mm + centroid_q * ny)
+
+
 def evaluate_state(
     *,
     width_mm: float,
@@ -190,18 +211,20 @@ def evaluate_state(
         q_block=q_block,
     )
     concrete_stress = CONCRETE_BLOCK_FACTOR * material.fcd_mpa
-    n_total = concrete_stress * area
-    m2_total = concrete_stress * first_x3
-    m3_total = -concrete_stress * first_x2
+    overlaps = tuple(_circle_halfplane_overlap(
+        bar, nx=nx, ny=ny, q_min=q_block) for bar in bars)
+    net_area = area - sum(item[0] for item in overlaps)
+    net_first_x2 = first_x2 - sum(item[1] for item in overlaps)
+    net_first_x3 = first_x3 - sum(item[2] for item in overlaps)
+    n_total = concrete_stress * net_area
+    m2_total = concrete_stress * net_first_x3
+    m3_total = -concrete_stress * net_first_x2
 
     for bar in bars:
         q_bar = bar.x2_mm * nx + bar.x3_mm * ny
         strain = material.epsilon_cu * (q_bar - q_na) / c_mm
         steel_stress = max(-material.fyd_mpa, min(material.fyd_mpa, material.es_mpa * strain))
-        net_stress = steel_stress
-        if q_bar >= q_block - 1e-12:
-            net_stress -= concrete_stress
-        force = net_stress * bar.area_mm2
+        force = steel_stress * bar.area_mm2
         n_total += force
         m2_total += force * bar.x3_mm
         m3_total += -force * bar.x2_mm
@@ -212,9 +235,9 @@ def evaluate_state(
         n_n=n_total,
         m2_nmm=m2_total,
         m3_nmm=m3_total,
-        concrete_area_mm2=area,
-        concrete_first_x2_mm3=first_x2,
-        concrete_first_x3_mm3=first_x3,
+        concrete_area_mm2=net_area,
+        concrete_first_x2_mm3=net_first_x2,
+        concrete_first_x3_mm3=net_first_x3,
     )
 
 

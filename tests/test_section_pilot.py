@@ -110,6 +110,34 @@ class SectionB1Tests(unittest.TestCase):
         self.assertEqual(b.status,SectionStatus.UNSUPPORTED_MATERIAL)
         self.assertIn("MIXED_BAR_STEEL_CONSTITUTIVE_LAWS",b.issues)
 
+    def test_concrete_block_bar_overlap_is_continuous_and_axial_response_monotone(self):
+        from math import cos, sin, radians
+        from tbdy_column_core.engineering.section_adapter import SectionKernelAdapter
+        p=fixture_problem(layout="B",angle_count=8)
+        adapter=SectionKernelAdapter(p.section,p.frame_model_contract)
+        material=adapter.prepare_material()
+        bars=adapter.bars()
+        width=p.section.profile.b.as_mm
+        depth=p.section.profile.h.as_mm
+        for theta in (0.0,33.0,90.0,137.0):
+            nx,ny=cos(radians(theta)),sin(radians(theta))
+            extreme=(abs(nx)*width+abs(ny)*depth)/2
+            transition_cs=tuple((extreme-(bar.x2_mm*nx+bar.x3_mm*ny))/material.k1
+                                for bar in bars)
+            for c in transition_cs:
+                if c<=1e-4:
+                    continue
+                gap=1e-5
+                left=adapter.evaluate(Angle.deg(theta),c-gap,material,bars)
+                right=adapter.evaluate(Angle.deg(theta),c+gap,material,bars)
+                self.assertLess(abs(right.n_compression_n-left.n_compression_n),5.0)
+            diagonal=(width*width+depth*depth)**.5
+            samples=(max(diagonal*1e-6,1e-6),diagonal*1e-3,diagonal*1e-1,
+                     diagonal,diagonal*1e2,diagonal*1e4)
+            axial=[adapter.evaluate(Angle.deg(theta),c,material,bars).n_compression_n
+                   for c in samples]
+            self.assertTrue(all(a<=b+1e-6 for a,b in zip(axial,axial[1:])),axial)
+
     def test_fixed_n_roots_independent_oracle(self):
         p=fixture_problem(layout="B",angle_count=8,
              request=EnvelopeAtAxialForce(Force.kn(500)))
@@ -139,18 +167,13 @@ class SectionB1Tests(unittest.TestCase):
                 request=RadialCapacityAtAxialForce(
                     Force.kn(500),Moment.kn_m(40),Moment.kn_m(20)))
             result=calculate_section(p)
-            if count==288:
-                self.assertEqual(result.status,SectionStatus.PARTIAL_ENVELOPE)
-                self.assertEqual(len(result.angular_coverage.missing_indices),4)
-                self.assertTrue(any("AXIAL_JUMP_CROSSES_TARGET" in x
-                                    for x in result.issues))
-                self.assertIsNone(result.radial_capacity)
-                radii.append(None)
-            else:
-                self.assertEqual(result.status,SectionStatus.COMPLETE_RADIAL,
-                                 result.issues[:4])
-                radii.append(result.radial_capacity.as_nmm)
-                self.assertEqual(len(result.states),count)
+            self.assertEqual(result.status,SectionStatus.COMPLETE_RADIAL,
+                             result.issues[:4])
+            self.assertTrue(result.angular_coverage.is_complete,result.issues[:4])
+            self.assertEqual(result.angular_coverage.missing_indices,())
+            self.assertEqual(len(result.states),count)
+            self.assertIsNotNone(result.radial_capacity)
+            radii.append(result.radial_capacity.as_nmm)
             self.assertFalse(result.full_column_design_pass)
         self.assertLess(abs(radii[0]-radii[1]),.03*radii[1])
         p=fixture_problem(layout="B")
@@ -209,7 +232,7 @@ class SectionB1Tests(unittest.TestCase):
         out=calculate_section(p)
         self.assertEqual(out.status,SectionStatus.COMPLETE_ENVELOPE,out.issues[:4])
         self.assertEqual(out.root_quality,
-                         "DUAL_GRID_SINGLE_SAMPLED_BRACKET_NOT_GLOBAL_ROOT_PROOF")
+                         "CONTINUOUS_MONOTONE_AXIAL_MODEL_SINGLE_BRACKET_CHECK")
         for state in out.states:
             self.assertEqual(state.root_scan_samples,359)
             self.assertEqual(state.sampled_root_brackets,1)

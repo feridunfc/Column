@@ -176,6 +176,41 @@ def _polygon_area_centroid(
     return signed_area, cx, cy
 
 
+
+def _circle_halfplane_overlap(
+    bar: ColumnBarPoint, *, nx: float, ny: float, q_min: float,
+) -> tuple[float, float, float]:
+    """Concrete overlap of a circular bar with the half-plane q >= q_min.
+
+    Returns overlap area and its first moments about the section x2/x3 axes.
+    The circular segment grows continuously as the block boundary crosses a
+    bar; this avoids the legacy all-or-nothing concrete subtraction jump.
+    """
+    radius = bar.diameter_mm / 2.0
+    q_bar = bar.x2_mm * nx + bar.x3_mm * ny
+    signed = q_bar - q_min
+    if signed <= -radius:
+        return 0.0, 0.0, 0.0
+    if signed >= radius:
+        return bar.area_mm2, bar.area_mm2 * bar.x2_mm, bar.area_mm2 * bar.x3_mm
+
+    radicand = max(0.0, radius * radius - signed * signed)
+    segment_area = (
+        radius * radius * math.acos(max(-1.0, min(1.0, -signed / radius)))
+        + signed * math.sqrt(radicand)
+    )
+    circle_area = math.pi * radius * radius
+    scale = bar.area_mm2 / circle_area
+    overlap_area = segment_area * scale
+    first_q = (2.0 / 3.0) * (radicand ** 1.5) * scale
+    centroid_offset = first_q / overlap_area if overlap_area > 0.0 else 0.0
+    return (
+        overlap_area,
+        overlap_area * (bar.x2_mm + centroid_offset * nx),
+        overlap_area * (bar.x3_mm + centroid_offset * ny),
+    )
+
+
 def evaluate_rectangular_column_capacity_state(
     *,
     width_mm: float,
@@ -209,13 +244,28 @@ def evaluate_rectangular_column_capacity_state(
     a = float(material.k1) * c
     q_block = q_extreme - a
     compression_polygon = _clip_polygon_halfplane(rectangle, nx=nx, ny=ny, q_min=q_block)
-    concrete_area, concrete_x2, concrete_x3 = _polygon_area_centroid(compression_polygon)
+    gross_area, gross_x2, gross_x3 = _polygon_area_centroid(compression_polygon)
 
     concrete_stress = TS500_CONCRETE_BLOCK_FACTOR * material.fcd_mpa
+    overlaps = tuple(
+        _circle_halfplane_overlap(bar, nx=nx, ny=ny, q_min=q_block)
+        for bar in bars
+    )
+    concrete_area = gross_area - sum(item[0] for item in overlaps)
+    concrete_first_x2 = gross_area * gross_x2 - sum(item[1] for item in overlaps)
+    concrete_first_x3 = gross_area * gross_x3 - sum(item[2] for item in overlaps)
+    if concrete_area < -1e-7:
+        raise ColumnSectionCapacityError("negative net concrete compression area")
+    if concrete_area < 0.0:
+        concrete_area = 0.0
+        concrete_first_x2 = 0.0
+        concrete_first_x3 = 0.0
     concrete_force = concrete_stress * concrete_area
+    concrete_x2 = concrete_first_x2 / concrete_area if concrete_area > 0.0 else 0.0
+    concrete_x3 = concrete_first_x3 / concrete_area if concrete_area > 0.0 else 0.0
     n_total = concrete_force
-    m2_total = concrete_force * concrete_x3
-    m3_total = -concrete_force * concrete_x2
+    m2_total = concrete_stress * concrete_first_x3
+    m3_total = -concrete_stress * concrete_first_x2
 
     steel_force_total = 0.0
     max_compression_strain = 0.0
@@ -225,13 +275,9 @@ def evaluate_rectangular_column_capacity_state(
         strain = material.epsilon_cu * (q_bar - q_na) / c
         steel_stress = max(-material.fyd_mpa, min(material.fyd_mpa, material.es_mpa * strain))
 
-        # The equivalent concrete block is based on the gross concrete polygon.
-        # Use net steel stress where a bar centre lies inside that block to avoid
-        # counting the replaced concrete area twice.
-        net_stress = steel_stress
-        if q_bar >= q_block - 1e-12:
-            net_stress -= concrete_stress
-        force = net_stress * bar.area_mm2
+        # Concrete occupying the bar's actual circular overlap was removed
+        # from the concrete block above; steel force is therefore unadjusted.
+        force = steel_stress * bar.area_mm2
         steel_force_total += force
         n_total += force
         m2_total += force * bar.x3_mm

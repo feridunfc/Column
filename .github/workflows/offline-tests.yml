@@ -32,3 +32,6 @@ jobs:
         run: python -m tools.b9_review_release_gate
       - name: Publish observed 72 144 288 numeric diagnostics
         run: python -m examples.b9_numerical_review
+      - name: High-resolution B9 angular convergence diagnostic
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        run: python -m examples.b9_high_resolution_review
