@@ -1,0 +1,87 @@
+schema_version: "1.0"
+rule_id: RC-REBAR-LONG-001
+revision: 1
+title: Kolon boyuna donatı oranı ve minimum çap
+category: REINFORCEMENT_DETAILING
+normative_state: SOURCE_TEXT_IDENTIFIED_ENGINEERING_REVIEW_PENDING
+implementation_state: SPECIFICATION_ONLY
+scope:
+  member: RC_COLUMN
+  splice_zone_is_separate_case: true
+normative_basis:
+  - document: TBDY-2018
+    clause: "7.3.2.1"
+    equations: ["phi_l >= 14 mm"]
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+  - document: TBDY-2018
+    clause: "7.3.2.2"
+    equations: ["0.01 <= rho_l <= 0.04", "rho_l <= 0.06 in lap-splice region"]
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+  - document: TS500/2000
+    clause: "7.4.1"
+    equations: ["minimum and maximum longitudinal reinforcement checks also apply"]
+    source: "https://www.yuzyilyapidenetim.com.tr/documents/TS500.pdf"
+    source_quality: ACCESSIBLE_COPY_NOT_AUTHORIZED_EDITION_RECEIPT
+inputs:
+  - name: bars
+    type: tuple[BarPoint]
+    unit: mm_and_mm2
+    required: true
+    evidence: as-built_or_design_bar_population
+  - name: gross_area
+    type: Area
+    unit: mm^2
+    required: true
+    evidence: section_geometry_revision
+  - name: splice_zone
+    type: enum
+    values: [OUTSIDE_SPLICE, LAP_SPLICE, UNKNOWN]
+    required: true
+equations:
+  - id: TOTAL_STEEL_AREA
+    expression: As = sum(pi * phi_i^2 / 4)
+    symbols:
+      As: total longitudinal reinforcement area, mm^2
+      phi_i: diameter of bar i, mm
+  - id: LONGITUDINAL_RATIO
+    expression: rho_l = As / Ac
+    symbols:
+      rho_l: dimensionless longitudinal reinforcement ratio
+      Ac: gross concrete section area, mm^2
+  - id: BASE_RATIO_INTERVAL
+    expression: 0.01 <= rho_l <= 0.04
+    clause: "TBDY 7.3.2.2"
+  - id: LAP_SPLICE_MAXIMUM
+    expression: rho_l <= 0.06
+    applicability: splice_zone == LAP_SPLICE
+    clause: "TBDY 7.3.2.2"
+decision:
+  direction: INTERVAL
+  lower: 0.01
+  upper: 0.04
+  splice_zone_override:
+    when: splice_zone == LAP_SPLICE
+    upper: 0.06
+  separate_conditions:
+    - every_longitudinal_bar_diameter_at_least_14_mm
+    - minimum_and_maximum_rules_from_applicable_TS500_edition
+  status_on_splice_zone_unknown: NO_DATA
+  status_on_missing_bar_population: NO_DATA
+engineering_notes:
+  - Do not use the lap-splice upper bound as a general-column maximum.
+  - The TS500 and TBDY conditions are cumulative where applicable; select the more restrictive valid requirement rather than replacing one standard with the other.
+  - The card does not decide bar arrangement, lap length, development length, or splice location by itself.
+required_evidence:
+  - bar_ids_diameters_and_coordinates
+  - gross_area_revision
+  - splice_zone_extent_and_station
+  - material_grade_and_rule_revision
+  - source_review_receipt_for_TS500_edition
+verification:
+  hand_cases:
+    - "rho_l = 0.0099 -> FAIL under the qualified base ratio rule."
+    - "rho_l = 0.0100 -> lower ratio boundary satisfied."
+    - "rho_l = 0.0401 outside splice zone -> FAIL."
+    - "rho_l = 0.0500 in verified lap-splice region -> evaluate against splice-specific limit, not the ordinary 4% cap."
+    - "Any longitudinal bar phi = 13.9 mm -> diameter rule FAIL."
+  independent_review_required: true

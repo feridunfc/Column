@@ -1,0 +1,119 @@
+schema_version: "1.0"
+rule_id: RC-SHEAR-TBDY-COLUMN-001
+revision: 1
+title: TBDY 2018 kolon kesme güvenliği ve kesme üst sınırı
+category: SEISMIC_COLUMN_SHEAR
+normative_state: SOURCE_TEXT_IDENTIFIED_ENGINEERING_REVIEW_PENDING
+implementation_state: NOT_EVALUATED
+scope:
+  member: RC_COLUMN
+  seismic_design: true
+  detailing_region: ALL_REQUIRED_COLUMN_STATIONS
+normative_basis:
+  - document: TBDY-2018
+    clause: "7.3.7.1-7.3.7.6"
+    equations: ["7.5", "7.7"]
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+inputs:
+  - name: M_a
+    type: Moment
+    unit: Nmm
+    required: true
+    evidence: lower_end_capacity_moment_with_governing_Nd_and_seismic_direction
+  - name: M_u
+    type: Moment
+    unit: Nmm
+    required: true
+    evidence: upper_end_capacity_moment_with_governing_Nd_and_seismic_direction
+  - name: l_n
+    type: Length
+    unit: mm
+    required: true
+    evidence: clear_member_height_for_this_column_segment
+  - name: V_d
+    type: Force
+    unit: N
+    required: true
+    evidence: factored_gravity_plus_D_amplified_earthquake_demand
+  - name: V_r
+    type: Force
+    unit: N
+    required: true
+    evidence: TS500_shear_resistance_with_TBDY_7_3_7_6_branch
+  - name: A_w
+    type: Area
+    unit: mm^2
+    required: true
+    evidence: effective_web_area_for_considered_earthquake_direction
+  - name: f_cd
+    type: Stress
+    unit: MPa
+    required: true
+  - name: V_E
+    type: Force
+    unit: N
+    required: true
+    evidence: earthquake_only_shear_for_same_design_state
+  - name: N_d
+    type: Force
+    unit: N
+    required: true
+    evidence: axial_force_for_same_station_and_governing_combination
+  - name: A_c
+    type: Area
+    unit: mm^2
+    required: true
+  - name: f_ck
+    type: Stress
+    unit: MPa
+    required: true
+equations:
+  - id: CAPACITY_SHEAR
+    expression: V_e_raw = (abs(M_a) + abs(M_u)) / l_n
+    units_check: Nmm / mm = N
+    clause: "TBDY 7.3.7.1, Eq. (7.5)"
+  - id: GOVERNING_DESIGN_SHEAR
+    expression: V_e = max(V_e_raw, V_d)
+    clause: "TBDY 7.3.7.1 and 7.3.7.5"
+  - id: RESISTANCE_CHECK
+    expression: V_e <= V_r
+    clause: "TBDY 7.3.7.5"
+  - id: UPPER_BOUND_CHECK
+    expression: V_e <= 0.22 * A_w * f_cd
+    units_check: mm^2 * MPa = N
+    clause: "TBDY 7.3.7.5, Eq. (7.7)"
+  - id: CONCRETE_CONTRIBUTION_OVERRIDE
+    expression: V_c = 0
+    applicability: confinement_region AND (V_E > 0.5 * total_seismic_case_shear) AND (N_d <= 0.05 * A_c * f_ck)
+    clause: "TBDY 7.3.7.6"
+decision:
+  direction: DEMAND_OVER_CAPACITY
+  mandatory_conditions:
+    - V_e <= V_r
+    - V_e <= 0.22 * A_w * f_cd
+  status_on_missing_end_moment_capacity_method: NO_DATA
+  status_on_missing_seismic_direction_or_load_case: NO_DATA
+  status_on_upper_bound_violation: FAIL
+  remedial_action_on_upper_bound_violation: ENLARGE_SECTION_AND_REPEAT_SEISMIC_ANALYSIS
+engineering_notes:
+  - Determine M_a and M_u using the applicable 7.3.7.2 or 7.3.7.3 branch; the base/foundation lower end uses the 7.3.7.4 rule.
+  - Check both earthquake directions and use the governing accepted case; do not combine unrelated maxima from different cases.
+  - V_d must use the exact gravity plus D-amplified earthquake combination required by the clause. V_e is not allowed to undercut V_d.
+  - A_w excludes section projections outside the effective web for the considered earthquake direction.
+  - For 7.3.7.6, evaluate the two predicates using the same load-state identity. If the condition is met, recalculate V_r with V_c = 0; do not apply V_c from the ordinary TS500 branch.
+  - Failure of the Eq. (7.7) upper bound requires section enlargement and renewed analysis, not just more transverse steel.
+required_evidence:
+  - both_end_capacity_moments_and_axial_force_branches
+  - clear_height_and_station_identity
+  - seismic_direction_and_governing_load_case
+  - D_factor_and_factored_demand_receipt
+  - effective_web_area_derivation
+  - TS500_resistance_trace_with_7_3_7_6_override
+verification:
+  hand_cases:
+    - "V_e_raw < V_d -> governing V_e equals V_d."
+    - "V_e equals 0.22 A_w f_cd -> upper-bound boundary satisfied."
+    - "V_e > 0.22 A_w f_cd -> FAIL and require section enlargement/reanalysis."
+    - "Seismic shear fraction > 0.5 and N_d <= 0.05 A_c f_ck in confinement region -> V_c forced to zero."
+    - "Missing end capacity moments -> NO_DATA, not a shear pass."
+  independent_review_required: true

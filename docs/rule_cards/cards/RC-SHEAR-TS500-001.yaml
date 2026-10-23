@@ -1,0 +1,107 @@
+schema_version: "1.0"
+rule_id: RC-SHEAR-TS500-001
+revision: 1
+title: TS 500 temel kesme dayanımı
+category: SHEAR_STRENGTH
+normative_state: SOURCE_TEXT_IDENTIFIED_EDITION_REVIEW_REQUIRED
+implementation_state: NOT_EVALUATED
+scope:
+  applies_to: RC_MEMBERS_WHERE_TS500_BASE_SHEAR_RULE_IS_APPLICABLE
+  excludes:
+    - TBDY_2018_SEISMIC_COLUMN_CONFINEMENT_REGION_WITH_Vc_OVERRIDE
+normative_basis:
+  - document: TS500/2000
+    clause: "8.1.2"
+    equations: ["V_d is evaluated at the clause-defined critical section"]
+    source: "https://www.yuzyilyapidenetim.com.tr/documents/TS500.pdf"
+  - document: TS500/2000
+    clause: "8.1.3"
+    equations: ["V_cr = 0.65 f_ctd b_w d (1 + gamma N_d / A_c)"]
+    source: "https://www.yuzyilyapidenetim.com.tr/documents/TS500.pdf"
+  - document: TS500/2000
+    clause: "8.1.4"
+    equations: ["V_r >= V_d", "V_r = V_c + V_w", "V_c = 0.8 V_cr", "V_w = (A_sw / s) f_ywd d"]
+    source: "https://www.yuzyilyapidenetim.com.tr/documents/TS500.pdf"
+    source_quality: ACCESSIBLE_COPY_NOT_AUTHORIZED_EDITION_RECEIPT
+inputs:
+  - name: V_d
+    type: Force
+    unit: N
+    required: true
+    evidence: governing_factored_demand_at_clause_defined_station
+  - name: f_ctd
+    type: Stress
+    unit: MPa
+    required: true
+  - name: b_w
+    type: Length
+    unit: mm
+    required: true
+  - name: d
+    type: Length
+    unit: mm
+    required: true
+  - name: N_d
+    type: Force
+    unit: N
+    required: true
+    evidence: axial_force_for_same_combination_and_station
+  - name: A_c
+    type: Area
+    unit: mm^2
+    required: true
+  - name: A_sw
+    type: Area
+    unit: mm^2
+    required: true
+  - name: s
+    type: Length
+    unit: mm
+    required: true
+  - name: f_ywd
+    type: Stress
+    unit: MPa
+    required: true
+equations:
+  - id: CRACKING_SHEAR
+    expression: V_cr = 0.65 * f_ctd * b_w * d * (1 + gamma * N_d / A_c)
+    units_check: MPa * mm * mm = N
+    gamma_branch:
+      axial_compression: 0.07
+      axial_tension: -0.30
+      rule: "Select branch from the qualified axial state; never infer it from an undocumented sign convention."
+    clause: "TS 500 8.1.3"
+  - id: CONCRETE_CONTRIBUTION
+    expression: V_c = 0.8 * V_cr
+    applicability: only_where_clause_and_seismic_rules_allow_general_TS500_expression
+    clause: "TS 500 8.1.4"
+  - id: TRANSVERSE_STEEL_CONTRIBUTION
+    expression: V_w = (A_sw / s) * f_ywd * d
+    clause: "TS 500 8.1.4"
+  - id: TOTAL_RESISTANCE
+    expression: V_r = V_c + V_w
+    clause: "TS 500 8.1.4"
+decision:
+  direction: DEMAND_OVER_CAPACITY
+  metric: V_d / V_r
+  threshold: 1.0
+  pass_condition: V_d <= V_r
+  status_until_authorized_TS500_edition_review: NOT_EVALUATED
+engineering_notes:
+  - Use the critical section defined by the applicable clause; do not silently use a generic station.
+  - Confirm whether minimum shear reinforcement is still required when V_d <= V_cr; a resistance inequality alone does not close detailing requirements.
+  - The TBDY seismic column end-confinement rule can force V_c = 0 under its stated conditions; this base card must not override that branch.
+  - Check the separate maximum shear/compression-strut limits required by the applicable member type and code clause; this card alone does not claim those checks are complete.
+required_evidence:
+  - authorized_TS500_edition_and_clause_review_receipt
+  - load_combination_station_and_sign_convention
+  - material_design_strengths
+  - transverse_reinforcement_population
+  - critical_section_selection
+verification:
+  hand_cases:
+    - "V_d = V_r -> resistance boundary satisfied."
+    - "V_d > V_r -> FAIL only after source/method qualification."
+    - "A_sw or s missing -> NO_DATA, never assume zero demand or infinite reinforcement."
+    - "Seismic confinement V_c override applicable -> this card cannot decide; invoke TBDY column shear card."
+  independent_review_required: true

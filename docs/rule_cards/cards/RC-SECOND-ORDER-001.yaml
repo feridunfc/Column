@@ -1,0 +1,81 @@
+schema_version: "1.0"
+rule_id: RC-SECOND-ORDER-001
+revision: 1
+title: Kolon narinliği, ikinci mertebe ve etkin rijitlik
+category: STABILITY_AND_SECOND_ORDER
+normative_state: METHOD_AND_CLAUSE_BRANCH_NOT_YET_RECONCILED
+implementation_state: NOT_EVALUATED
+scope:
+  member: RC_COLUMN
+  required_context:
+    - story_and_clear_height
+    - sway_or_non_sway_classification
+    - end_restraint_and_effective_length_basis
+    - cracked_or_effective_stiffness_method
+    - governing_axial_force_and_first_order_moments
+normative_basis:
+  - document: TBDY-2018
+    clause: "Chapter 7 member design; exact applicable column/slenderness clause to be pinned during source review"
+    equations: []
+    source: "https://www.afad.gov.tr/kurumlar/afad.gov.tr/2309/files/TBDY_2018.pdf"
+  - document: TS500
+    clause: "Exact slender-column and second-order clause/equation must be pinned before implementation"
+    equations: []
+    source: "https://www.yuzyilyapidenetim.com.tr/documents/TS500.pdf"
+    source_quality: ACCESSIBLE_COPY_NOT_AUTHORIZED_EDITION_RECEIPT
+inputs:
+  - name: l_n
+    type: Length
+    unit: mm
+    required: true
+  - name: k
+    type: scalar
+    unit: dimensionless
+    required: true
+    evidence: accepted_end_restraint_and_stability_model
+  - name: r
+    type: Length
+    unit: mm
+    required: true
+    evidence: section_inertia_and_area_for_considered_axis
+  - name: N_d
+    type: Force
+    unit: N
+    required: true
+  - name: M_1
+    type: Moment
+    unit: Nmm
+    required: true
+  - name: EI_eff
+    type: flexural_rigidity
+    unit: Nmm^2
+    required: true
+    evidence: accepted_cracked_effective_stiffness_method_and_revision
+equations:
+  - id: SLENDERNESS_RATIO
+    expression: lambda = k * l_n / r
+    meaning: preliminary geometric slenderness measure; not by itself a code decision
+  - id: SECOND_ORDER_DEMAND
+    expression: M_2nd = M_1st + delta_M
+    meaning: schematic only; delta_M must come from the accepted code method and stability model
+decision:
+  direction: NOT_EVALUATED
+  status_until_clause_branch_and_EI_method_accepted: NOT_EVALUATED
+engineering_notes:
+  - Do not infer clear height from story height without beam/slab/connection evidence.
+  - Do not invent EI from gross-section inertia or a hard-coded reduction factor. The adopted code method, axial load state, creep and cracking assumptions must be explicit.
+  - Sway/non-sway, end restraint, member effective length and moment magnification are not interchangeable flags.
+  - The formula shown for lambda is a geometric descriptor only. It must not be used as a pass/fail limit until the governing standard branch and threshold are verified.
+required_evidence:
+  - exact_normative_clause_and_equation_receipt
+  - story_and_member_geometry_revision
+  - stability_classification_receipt
+  - effective_length_derivation
+  - EI_eff_method_and_material_state
+  - first_order_demand_population
+verification:
+  hand_cases:
+    - "Missing EI_eff method -> NOT_EVALUATED."
+    - "Missing story/clear-height evidence -> NO_DATA."
+    - "No second-order demand may be substituted with zero."
+  independent_review_required: true

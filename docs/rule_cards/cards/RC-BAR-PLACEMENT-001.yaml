@@ -1,0 +1,59 @@
+schema_version: "1.0"
+rule_id: RC-BAR-PLACEMENT-001
+revision: 1
+title: Boyuna donatı yerleşimi, örtü ve çubuk çakışma geometrisi
+category: GEOMETRIC_INPUT_VALIDATION
+normative_state: GEOMETRY_ONLY_NORMATIVE_COVER_LIMITS_NOT_PINNED
+implementation_state: GEOMETRY_GATE_ONLY
+normative_basis:
+  - document: COLUMN_CONSTITUTION
+    clause: "C-08, C-09, C-17"
+    equations: []
+    source: "COLUMN_CONSTITUTION.md"
+inputs:
+  - name: profile
+    type: RectangularSection
+    unit: mm
+    required: true
+  - name: clear_cover
+    type: Length
+    unit: mm
+    required: true
+  - name: tie_diameter
+    type: Length
+    unit: mm
+    required: true
+  - name: bars
+    type: tuple[BarPoint]
+    unit: mm
+    required: true
+equations:
+  - id: BAR_CONTAINMENT
+    expression: abs(x2_i) + c_clear + phi_tie + phi_i/2 <= b/2 AND abs(x3_i) + c_clear + phi_tie + phi_i/2 <= h/2
+    meaning: bar centre must remain inside the rectangular cage with the declared cover, tie and bar radius
+  - id: BAR_COLLISION
+    expression: distance(i,j) >= (phi_i + phi_j)/2
+    meaning: longitudinal bar disks must not overlap
+  - id: BAR_TO_TIE_ENCLOSURE
+    expression: each_required_longitudinal_bar_is_enclosed_or_laterally_supported_by_a_verified_tie_or_crosstie_path
+    meaning: requires tie/crosstie geometry, not merely a bar ID reference
+decision:
+  direction: CONDITION
+  pass_requires_all: true
+  status_on_missing_tie_geometry: NO_DATA
+  status_on_missing_cover_source_for_normative_claim: NOT_EVALUATED
+engineering_notes:
+  - Passing this card proves only declared geometry is internally consistent. It does not prove code-required clear cover, confinement, seismic hook, tie-leg or crosstie compliance.
+  - A crosstie is a geometric object with diameter, hook/anchorage details, endpoints and a restraint path; a list of bar IDs alone cannot prove confinement.
+  - Do not let a user-supplied matching tolerance make an off-section station or off-cage bar valid. Geometry tolerance must be bounded by the approved NumericalPolicy and cannot enlarge the physical domain.
+required_evidence:
+  - section_and_bar_coordinate_frame
+  - tie_and_crosstie_geometry
+  - clear_cover_measurement_or_design_source
+  - approved_geometric_tolerance
+verification:
+  hand_cases:
+    - "Two equal bars whose centre spacing is below diameter sum/2 -> FAIL."
+    - "Bar outside section by 500 mm remains invalid for any accepted small numerical tolerance."
+    - "No crosstie geometry -> NO_DATA for lateral-restraint claim."
+  independent_review_required: true
