@@ -9,8 +9,10 @@ from math import isfinite
 from ..domain.section_requests import (
     SectionCapacityProblem, SectionCapacityResult, SectionStatus, SectionState,
     AtStrainState, EnvelopeAtAxialForce, RadialCapacityAtAxialForce,
-    AngularCoverage,
+    AngularCoverage, RadialReferenceStatus,
 )
+from dataclasses import replace
+from .radial_admissibility import check_radial_reference, verify_radial_boundary
 from ..domain.quantities import Force, Moment, Length, Angle
 from ..domain.coordinates import frame_basis_max_residual
 from ..domain.tolerances import within
@@ -46,6 +48,7 @@ class SectionSolver:
         issues=[]
         states=[]
         cap=boundary2=boundary3=None
+        radial_audit=None
         step=None
         resolved_indices=None
         quality="NOT_RUN"
@@ -93,7 +96,7 @@ class SectionSolver:
                         section,request,policy,SectionStatus.UNDEFINED_MOMENT_DIRECTION,
                         states,issues,cap,boundary2,boundary3,None,
                         problem.input_refs,"NOT_APPLICABLE_ZERO_DIRECTION",None,
-                        problem.frame_model_contract,basis_error,identity
+                        problem.frame_model_contract,basis_error,identity,radial_audit
                     )
                 angle_count=policy.angle_count
                 step=Angle.deg(360/angle_count)
@@ -139,29 +142,38 @@ class SectionSolver:
                 elif type(request) is EnvelopeAtAxialForce:
                     status=SectionStatus.COMPLETE_ENVELOPE
                 else:
-                    radial=adapter.radial(kernel_states,target,
-                                          request.direction_m2,request.direction_m3,
-                                          step.as_deg)
-                    if radial.status!="PROVEN" or not all(isfinite(v) for v in (
-                        radial.capacity_nmm,radial.boundary_m2_nmm,radial.boundary_m3_nmm)):
-                        issues.append("RADIAL_UNRESOLVED:"+radial.status)
+                    sampled_hull=check_radial_reference(kernel_states,policy)
+                    radial_audit=sampled_hull.audit
+                    if radial_audit.status!=RadialReferenceStatus.VALIDATED:
+                        issues.append("RADIAL_REFERENCE_UNRESOLVED:"+radial_audit.status.value)
                         status=SectionStatus.NUMERIC_UNRESOLVED
                     else:
-                        cap=Moment.nmm(radial.capacity_nmm)
-                        boundary2=Moment.nmm(radial.boundary_m2_nmm)
-                        boundary3=Moment.nmm(radial.boundary_m3_nmm)
-                        status=SectionStatus.COMPLETE_RADIAL
+                        radial=adapter.radial(kernel_states,target,
+                                              request.direction_m2,request.direction_m3,
+                                              step.as_deg)
+                        if not verify_radial_boundary(
+                            radial,request.direction_m2,request.direction_m3,policy,sampled_hull
+                        ):
+                            radial_audit=replace(
+                                radial_audit,status=RadialReferenceStatus.KERNEL_BOUNDARY_INCONSISTENT)
+                            issues.append("RADIAL_BOUNDARY_UNRESOLVED:"+radial.status)
+                            status=SectionStatus.NUMERIC_UNRESOLVED
+                        else:
+                            cap=Moment.nmm(radial.capacity_nmm)
+                            boundary2=Moment.nmm(radial.boundary_m2_nmm)
+                            boundary3=Moment.nmm(radial.boundary_m3_nmm)
+                            status=SectionStatus.COMPLETE_RADIAL
 
         return self._result(
             section,request,policy,status,states,issues,cap,boundary2,boundary3,
             step,problem.input_refs,quality,resolved_indices,
-            problem.frame_model_contract,basis_error,identity
+            problem.frame_model_contract,basis_error,identity,radial_audit
         )
 
     @staticmethod
     def _result(section,request,policy,status,states,issues,
                 cap,boundary2,boundary3,step,input_refs,quality,resolved_indices,
-                frame_contract,basis_error,input_fingerprint):
+                frame_contract,basis_error,input_fingerprint,radial_audit):
         coverage=None
         if resolved_indices is not None:
             count=policy.angle_count
@@ -195,4 +207,5 @@ class SectionSolver:
             frame_model_contract=frame_contract,
             frame_basis_max_residual=basis_error,
             angular_coverage=coverage,
+            radial_reference_audit=radial_audit,
         )
