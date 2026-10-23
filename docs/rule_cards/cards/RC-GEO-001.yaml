@@ -27,6 +27,7 @@ inputs:
   - name: b
     type: Length
     unit: mm
+    required: false
     required_if: section_type == RECTANGULAR
   - name: h
     type: Length
@@ -35,6 +36,7 @@ inputs:
   - name: diameter
     type: Length
     unit: mm
+    required: false
     required_if: section_type == CIRCULAR
   - name: N_dm
     type: Force

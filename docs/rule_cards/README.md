@@ -71,3 +71,41 @@ See `catalog.yaml` and the individual cards:
 3. Each formula receives hand-calculated boundary examples and independent oracle comparisons.
 4. The runtime adapter consumes a typed immutable `CheckRequest` and returns a `CheckResult` containing rule revision, inputs/evidence, formula trace, measured value, limit, utilization, status and issue codes.
 5. A future `check_column` API remains blocked until the owner ratifies C-02 and updates the canonical constitution package and hashes together.
+
+## Future typed result contract (not implemented in this branch)
+
+```python
+class PassRule(Enum):
+    DEMAND_OVER_CAPACITY = "demand/capacity <= 1"
+    PROVIDED_OVER_REQUIRED = "provided/required >= 1"
+    CONDITION = "predicate is true"
+    INTERVAL = "lower <= value <= upper"
+    MAXIMUM = "value <= limit"
+    MINIMUM = "value >= limit"
+
+class Status(Enum):
+    OK = "OK"
+    WARNING = "WARNING"
+    FAIL = "FAIL"
+    NO_DATA = "NO_DATA"
+    UNRESOLVED = "UNRESOLVED"
+    NOT_EVALUATED = "NOT_EVALUATED"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+
+@dataclass(frozen=True)
+class CheckResult:
+    rule_id: str
+    rule_revision: int
+    direction: PassRule
+    status: Status
+    level: str                 # INFO / WARNING / ERROR / BLOCKER
+    metric: float | bool | None
+    unit: str | None
+    limit: float | None
+    utilization: float | None
+    input_evidence_refs: tuple[str, ...]
+    formula_trace: tuple[str, ...]
+    issue_codes: tuple[str, ...]
+```
+
+A future `shear_check(demand, section, rule_revision, evidence)` must first resolve the applicable card and code branch, then calculate. It must return `NO_DATA` for absent qualified demand/material/detailing data, `UNRESOLVED` for contradictory or unqualified method evidence, `NOT_EVALUATED` while the card is not implemented/accepted, and `FAIL` only for a verified applicable rule violation. A boolean `has_failures` is not a substitute for exposing an observed utilization above unity.
