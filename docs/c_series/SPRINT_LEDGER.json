@@ -283,16 +283,32 @@
         "C-32"
       ],
       "scope_key": "ACCEPTANCE_PREP",
-      "status": "PLANNED",
+      "status": "IMPLEMENTED_UNTESTED",
       "deliverable": "Analitik ve bağımsız sayısal oracle; sınır/negatif senaryolar; dosya+CI kanıtları; C-01…C-32 ve C sprint kapsam matrisi",
       "required_negative_evidence": "Test sonucu = normatif onay; üretim değerini oraclea kopyalama; drift'i belge silerek saklama reddi",
       "supervisor_disposition": "PENDING",
-      "issues": [],
-      "source_branch": null,
+      "issues": [
+        "C02-SCOPE",
+        "B9-F02",
+        "B9-F03",
+        "Second-order EI and story basis still not verified",
+        "Independent tests and Supervisor review outstanding"
+      ],
+      "source_branch": "worker/v132-c3-c8-column-candidate-20261023",
       "origin_head": null,
       "integrated_candidate_head": null,
-      "files": [],
-      "evidence": []
+      "files": [
+        "tbdy_column_core/engineering/full_member_demand.py",
+        "tbdy_column_core/engineering/column_evaluator.py",
+        "tbdy_column_core/reporting/column_report.py",
+        "tests/test_c7_column_flow.py",
+        "docs/c_series/C01_C32_SUPERVISOR_MATRIX.md"
+      ],
+      "evidence": [
+        "C7 independent analytical 1000 N x 100 mm source frame reference authored",
+        "9 C7 test methods authored, execution deferred"
+      ],
+      "base_head": "50bb11a4aa3853a0d665e7e98b9cc87f9d6babf3"
     },
     {
       "id": "C8",

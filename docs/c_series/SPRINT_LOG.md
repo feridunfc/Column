@@ -80,3 +80,10 @@ NEXT SPRINT PRECONDITIONS:
 - **Kod:** `application/column_check.py` açık tek yönlü C2→C3→C4→C5 akışını ve kaynak bağlı `CheckRequest`/değişmez `ColumnResult` değerini kurar. `application/services.py` içinden public `check_column` erişimi verilir. `reporting/column_report.py` aynı sonuçtan strict JSON ve escaped HTML üretir.
 - **Sınır:** tasarım araması, ETABS API, ikinci-mertebe hesap, kesme/sargı, birleşim veya normatif PASS yok. Sonuç `INCOMPLETE_NOT_CODE_APPROVED` ve tüm kaynak/coverage meselelerini taşır. `ColumnResult` tüm zorunlu check başlıklarını kaybetmeden korur.
 - **TESTS:** C8 sonrası toplu koşu için ertelendi; `IMPLEMENTED_UNTESTED`. Supervisor ve merge PENDING.
+
+## 2026-10-23 — C7: test/oracle ve 32 maddelik denetim paketi — IMPLEMENTED_UNTESTED
+
+- **BASE:** `50bb11a4aa3853a0d665e7e98b9cc87f9d6babf3`. C7.1 ara kod HEAD `50bb11a4aa3853a0d665e7e98b9cc87f9d6babf3` ile C4 kaynak istasyon frame eşlemesi ve C5 bağımsız B sayısal **diagnostic** eklenmiştir.
+- **Kod:** `tests/test_c7_column_flow.py` 9 test adayı ve `docs/c_series/C01_C32_SUPERVISOR_MATRIX.md`. Analitik r×F beklenen değer **1000 N × 100 mm = 100,000 Nmm**; B kesit sonuçları sadece izlenen sayısal gözlem, normatif PMM PASS değildir.
+- **Bulgular:** B9-F02/F03, C-02 scope, EI/second-order/stability ve D/E uygunluk yöntemleri açık. Bağımsız Supervisor C-01…C-32 denetim matrisi UNVERIFIED.
+- **TESTS:** kullanıcının talebi gereği koşulmadı. Test başarı oranı iddia edilmiyor, Supervisor PENDING, merge HOLD.
